@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Build / runtime artifacts (should never be committed)
+*.apk
+cuttlefish-base/
+cf-work-*/
