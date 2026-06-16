@@ -66,6 +66,8 @@ sudo reboot
 │   ├── setup-host.sh           # one-time host provisioning
 │   ├── run-cuttlefish-gpu.sh   # launch one or many GPU emulators
 │   └── install-and-launch.sh   # install an APK and start it on all devices
+├── src/
+│   └── tcp_nodelay.c       # LD_PRELOAD shim: TCP_NODELAY for low-latency ADB
 └── docs/
     └── SETUP.md            # detailed setup guide and troubleshooting
 ```
