@@ -25,7 +25,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Add Cuttlefish repository (for capability_query.py and other helpers)
+# Cuttlefish apt repository
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl gnupg \
     && curl -fsSL https://us-apt.pkg.dev/doc/repo-signing-key.gpg \
@@ -34,35 +34,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        > /etc/apt/sources.list.d/artifact-registry.list \
     && rm -rf /var/lib/apt/lists/*
 
-# Create groups required by cuttlefish packages (GIDs must match host!)
-# 993 = kvm, 303 = render, 115 = cvdnetwork, 992 = renderD* devices
+# Groups expected by the cuttlefish packages
 RUN groupadd -g 993 kvm || true \
     && groupadd -g 303 render || true \
     && groupadd -g 115 cvdnetwork || true
 
-# Install runtime dependencies
-# NOTE: We do NOT install cuttlefish-orchestration - it's not needed
-#       and the musl binaries come from mounted CF_BASE
+# Runtime dependencies (the cuttlefish binaries come from the mounted CF_BASE)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Cuttlefish helpers (capability_query.py, etc.)
     cuttlefish-base \
     cuttlefish-user \
-    # Core
     sudo \
-    # GCC for TCP_NODELAY patch compilation
     gcc \
     libc6-dev \
-    # ADB
     android-tools-adb \
-    # Virtualization
     qemu-kvm \
     qemu-system-arm \
-    # Networking
     iproute2 \
     iptables \
     net-tools \
     bridge-utils \
-    # Graphics / EGL / Vulkan (glibc - for symlinks to work)
     libegl1 \
     libgl1 \
     libgbm1 \
@@ -70,77 +60,49 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvulkan1 \
     vulkan-tools \
     mesa-utils \
-    # C++ runtime
     libstdc++6 \
-    # Diagnostics
     procps \
-    # Python3 (required for capability_query.py!)
     python3 \
-    # =========================================================================
-    # APPIUM SUPPORT (added for low-latency adb from inside container)
-    # Without this: adb from host to container = ~52ms
-    # With Appium inside container: adb = ~2-3ms
-    # =========================================================================
-    # Java runtime (required for Appium UIAutomator2 driver)
     openjdk-17-jre-headless \
-    # =========================================================================
     && rm -rf /var/lib/apt/lists/*
 
-# =========================================================================
-# NODE.JS 20 (required for Appium - Ubuntu 24.04 ships Node.js 18 which is too old)
-# =========================================================================
+# Node.js 20 (for Appium)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# =========================================================================
-# APPIUM INSTALLATION
-# Appium server + UIAutomator2 driver for Android automation
-# Ports: 4723 (emu-1), 4724 (emu-2), ... 4736 (emu-14)
-# NOTE: Driver installs to $APPIUM_HOME (~/.appium), so we install as ubuntu user
-# =========================================================================
+# Appium server + UIAutomator2 driver
 RUN npm install -g appium@latest
 
-# Install UIAutomator2 driver as ubuntu user (not root!)
+# Driver installs under ~/.appium, so install it as the ubuntu user
 USER ubuntu
 RUN appium driver install uiautomator2
 USER root
 
-# =========================================================================
-# TCP_NODELAY PATCH for low-latency ADB (~12ms instead of ~50ms)
-# This intercepts socket connect/accept calls and enables TCP_NODELAY
-# to disable Nagle's algorithm on all TCP connections
-# =========================================================================
+# Build the TCP_NODELAY LD_PRELOAD shim (see src/tcp_nodelay.c)
 COPY src/tcp_nodelay.c /tmp/tcp_nodelay.c
 RUN gcc -shared -fPIC -o /usr/lib/tcp_nodelay.so /tmp/tcp_nodelay.c -ldl \
     && rm /tmp/tcp_nodelay.c \
     && echo "TCP_NODELAY library compiled"
 
-# NOTE: Wrapper script is created by run-cuttlefish-gpu.sh at runtime
-# because socket_vsock_proxy binary is in /opt/cf/run/fetch/bin/ (mounted from host)
+# The socket_vsock_proxy wrapper is created at runtime by run-cuttlefish-gpu.sh
 
-# Create ubuntu user with sudo
+# Create the ubuntu user with passwordless sudo
 RUN id ubuntu &>/dev/null || useradd -m -s /bin/bash ubuntu \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     && usermod -aG kvm,render,cvdnetwork ubuntu || true
 
-# Environment
 ENV CF_BASE=/opt/cf/base
 ENV CF_RUN=/opt/cf/run
 
-# NOTE: GPU environment variables are set via docker run -e:
-#   __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/01_nvidia.json
-#   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
-# They vary per host (01_nvidia.json vs 10_nvidia.json, etc.)
+# GPU env vars (__EGL_VENDOR_LIBRARY_FILENAMES, VK_ICD_FILENAMES) are set at
+# runtime via docker run -e; the exact filenames vary per host.
 
-# Ports:
-#   ADB:    6520-6533 (emu-1 to emu-14)
-#   WebRTC: 8443-8456 (emu-1 to emu-14)
-#   Appium: 4723-4736 (emu-1 to emu-14) <- APPIUM SUPPORT
+# Ports: ADB 6520-6533, WebRTC 8443-8456, Appium 4723-4736
 EXPOSE 6520-6533 8443-8456 4723-4736 1443
 
 USER ubuntu
 WORKDIR /opt/cf/run
 
-# No default entrypoint - run-cuttlefish-gpu.sh provides inline script
+# No entrypoint; run-cuttlefish-gpu.sh provides the launch script
 CMD ["bash"]
