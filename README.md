@@ -6,18 +6,12 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Run multiple GPU-accelerated [Cuttlefish](https://source.android.com/docs/devices/cuttlefish)
-Android virtual devices in Docker on ARM64 hosts with NVIDIA GPUs
-(e.g. AWS `g5g.metal` with NVIDIA T4G). Hardware-accelerated graphics via
-`gfxstream` + Vulkan, designed to pack many instances onto a single host for
-parallel UI automation.
-
-> Verified with up to **14 concurrent emulators** on a single `g5g.metal` host
-> using `gfxstream_guest_angle` + `skiavk` on NVIDIA T4G.
+Android virtual devices in Docker on ARM64 hosts with NVIDIA GPUs.
+Hardware-accelerated graphics via `gfxstream` + Vulkan.
 
 ## Features
 
-- **GPU acceleration** — `gfxstream` with the NVIDIA Vulkan backend, no software
-  rendering fallback required.
+- **GPU acceleration** — `gfxstream` with the NVIDIA Vulkan backend.
 - **Multi-instance** — launch many devices at once, each with pinned CPU cores
   and round-robin GPU assignment for balanced load.
 - **Docker-based** — a single runtime image; the Android base is fetched once and
@@ -30,11 +24,11 @@ parallel UI automation.
 
 ## Requirements
 
-- ARM64 (`aarch64`) host with an NVIDIA GPU (developed on NVIDIA T4G / AWS `g5g.metal`)
+- ARM64 (`aarch64`) host with an NVIDIA GPU.
 - Ubuntu 24.04
 - KVM enabled (`/dev/kvm`)
 - Docker
-- NVIDIA driver 580.x (installed by the setup script)
+- NVIDIA drivers
 
 > x86_64 hosts are not supported yet — this setup targets ARM64 + NVIDIA. See [Roadmap](#roadmap).
 
