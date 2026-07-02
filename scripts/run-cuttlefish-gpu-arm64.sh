@@ -219,7 +219,6 @@ else
 fi
 echo "ADB Port:      $ADB_PORT"
 echo "WebRTC:        $WEBRTC_PORT"
-echo "Appium:        $APPIUM_PORT"
 echo "Resolution:    ${X_RES}x${Y_RES} @ ${DPI}dpi"
 echo "Resources:     ${CPUS} vCPUs, ${MEMORY_MB}MB RAM, pinned to CPUs ${CPU_SET}"
 echo "GPU Mode:      $GPU_MODE"

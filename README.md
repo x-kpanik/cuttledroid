@@ -17,8 +17,10 @@ Hardware-accelerated graphics via `gfxstream` + Vulkan.
 - **Docker-based** — a single runtime image; the Android base is fetched once and
   shared read-only across all containers.
 - **WebRTC streaming** — view any device in the browser over an SSH tunnel.
-- **Low-latency ADB** — a `TCP_NODELAY` `LD_PRELOAD` shim and an optional in-container
-  Appium server cut ADB round-trips from ~50 ms to a few ms.
+- **Low-latency ADB** — a `TCP_NODELAY` `LD_PRELOAD` shim cuts ADB round-trips
+  from ~50 ms to a few ms.
+- **Appium-ready (optional)** — the base images ship no Appium; an overlay image
+  in [appium/](appium/) adds the server + UIAutomator2 driver when you need it.
 - **Automation-ready** — devices boot with lock screen disabled, animations off,
   ANR/crash dialogs hidden, and the soft keyboard enabled.
 
@@ -104,6 +106,7 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 .
 ├── Dockerfile              # ARM64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── Dockerfile.x86          # x86_64 + NVIDIA runtime image (Ubuntu 24.04)
+├── appium/                 # optional Appium overlay image (server + UIAutomator2)
 ├── scripts/
 │   ├── setup-host.sh                 # one-time host provisioning (ARM64)
 │   ├── run-cuttlefish-gpu-arm64.sh   # launch one or many GPU emulators (ARM64)
@@ -147,6 +150,22 @@ ssh -L 8443:localhost:8443 ubuntu@<HOST_IP>
 ./scripts/install-and-launch.sh ~/app.apk com.example.app com.example.app.MainActivity
 ```
 
+### Appium (optional)
+
+The base images contain no Appium. Build the overlay from [appium/](appium/)
+on top of either base image and pass it to any launcher via `IMAGE_NAME`:
+
+```bash
+docker build -t cuttlefish-appium:latest appium/                  # ARM64 base
+docker build --build-arg BASE_IMAGE=cuttlefish-x86:latest \
+  -t cuttlefish-appium-x86:latest appium/                         # x86_64 base
+
+IMAGE_NAME=cuttlefish-appium:latest ./scripts/run-cuttlefish-gpu-arm64.sh 1
+```
+
+See [appium/README.md](appium/README.md) for starting the server inside a
+running container.
+
 ### Run without a GPU
 
 Dedicated SwiftShader (CPU rendering) launchers pass nothing GPU-related into
@@ -173,7 +192,9 @@ Each instance `N` uses a fixed port offset:
 |---------|----------|------------|-------------|
 | ADB     | 6519 + N | 6520       | 6533        |
 | WebRTC  | 8442 + N | 8443       | 8456        |
-| Appium  | 4722 + N | 4723       | 4736        |
+| Appium* | 4722 + N | 4723       | 4736        |
+
+\* Appium is only present in the optional [appium/](appium/) overlay image.
 
 ## Configuration
 
@@ -230,7 +251,8 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
   Fully self-contained container (in-container networking, no host services, no
   sudo). Verified on RTX 5080 / driver 595: guest renders through
   `ANGLE (NVIDIA, Vulkan)` via gfxstream. Not yet ported to x86: the
-  `TCP_NODELAY` shim and the in-image Appium server.
+  `TCP_NODELAY` shim (Appium is available for both arches via the
+  [appium/](appium/) overlay).
 
 ## License
 

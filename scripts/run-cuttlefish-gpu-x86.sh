@@ -241,8 +241,11 @@ GUESTEOF
 chmod +x "$WORK_DIR/inner-root.sh" "$WORK_DIR/inner-guest.sh"
 
 echo "Starting container..."
+# --user root: inner-root.sh needs root for devices/networking; explicit so the
+# launcher also works with overlay images that set USER ubuntu (e.g. appium/)
 docker run -d \
   --name "$CONTAINER_NAME" \
+  --user root \
   -p "127.0.0.1:${ADB_PORT}:6521" \
   -p "127.0.0.1:${WEBRTC_PORT}:8444" \
   --cap-add=NET_ADMIN \
