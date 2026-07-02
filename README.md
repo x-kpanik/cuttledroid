@@ -32,13 +32,22 @@ Hardware-accelerated graphics via `gfxstream` + Vulkan.
 - Docker
 - NVIDIA drivers
 
-The two architectures use separate images and launchers that live side by side —
-pick the pair that matches your host:
+## Choosing a launcher
 
-| Host | Image (Dockerfile) | Launcher |
-|------|--------------------|----------|
-| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` |
-| x86_64 (NVIDIA desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` |
+Both architectures live side by side, and each has a GPU launcher
+(`gfxstream` + NVIDIA Vulkan) and a no-GPU launcher (SwiftShader, CPU
+rendering — works on hosts without any GPU). Pick by host architecture and
+whether an NVIDIA GPU is available:
+
+| Host | Image (Dockerfile) | With GPU (gfxstream) | Without GPU (SwiftShader) |
+|------|--------------------|----------------------|---------------------------|
+| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` | `scripts/run-cuttlefish-nogpu-arm64.sh` |
+| x86_64 (desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` | `scripts/run-cuttlefish-nogpu-x86.sh` |
+
+All four take the same arguments (`N` for a single instance, `all [count]`
+for many) and use the same ports (adb `6519+N`, webrtc `8442+N`). The no-GPU
+launchers are much slower and default to a reduced 1280x720 resolution — see
+[Run without a GPU](#run-without-a-gpu).
 
 ## Quick start
 
