@@ -1,4 +1,4 @@
-# Cuttlefish Android Emulators on NVIDIA GPU (ARM64, Docker)
+# Cuttlefish Android Emulators on NVIDIA GPU
 
 ![Platform](https://img.shields.io/badge/platform-ARM64%20%7C%20x86__64-blue)
 ![GPU](https://img.shields.io/badge/GPU-NVIDIA%20T4G-76b900)
