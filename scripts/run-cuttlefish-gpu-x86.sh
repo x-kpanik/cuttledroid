@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run Cuttlefish emulator with NVIDIA GPU in Docker — x86_64 port of
-# run-cuttlefish-gpu.sh (see that script for the ARM64 original).
+# run-cuttlefish-gpu-arm64.sh (see that script for the ARM64 original).
 #
 # Differences from the ARM64 version:
 #   - Fully self-contained container: cuttlefish-host-resources (bridges, TAPs,
@@ -24,8 +24,8 @@
 #      docker build -f Dockerfile.x86 -t cuttlefish-x86:latest .
 #
 # Usage:
-#   ./run-cuttlefish-x86.sh [instance_num]    # single emulator
-#   ./run-cuttlefish-x86.sh all [count]       # multiple emulators
+#   ./run-cuttlefish-gpu-x86.sh [instance_num]    # single emulator
+#   ./run-cuttlefish-gpu-x86.sh all [count]       # multiple emulators
 #
 # Environment variables:
 #   CUTTLEFISH_BASE - pre-fetched base (default: ~/cuttlefish-base-x86)
@@ -42,7 +42,7 @@ if [ "$1" = "all" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   for i in $(seq 1 $COUNT); do
     echo "--- Starting container #$i of $COUNT ---"
-    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-x86.sh" "$i"
+    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-gpu-x86.sh" "$i"
     [ $i -lt $COUNT ] && sleep $DELAY
   done
   echo "All $COUNT containers started; check each with: docker logs -f cuttlefish-x86-N"

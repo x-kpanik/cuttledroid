@@ -3,7 +3,7 @@
 # Cuttlefish ARM64 host tools (cvd-host_package.tar.gz) are musl-based, while the
 # NVIDIA Vulkan/EGL drivers are glibc-based. The launcher bridges this with
 # symlinks in $FETCH/hostlibs/ and a minimal LD_LIBRARY_PATH
-# (see scripts/run-cuttlefish-gpu.sh).
+# (see scripts/run-cuttlefish-gpu-arm64.sh).
 #
 # Layout:
 #   - CF_BASE (mounted read-only) - pre-fetched Android images + cvd binaries (musl)
@@ -20,8 +20,8 @@
 #   garbage-collects them. aosp-main is dead for public fetches — 404.)
 #
 # Run:
-#   ./scripts/run-cuttlefish-gpu.sh 1   # instance 1: adb 6520, webrtc 8443
-#   ./scripts/run-cuttlefish-gpu.sh 2   # instance 2: adb 6521, webrtc 8444
+#   ./scripts/run-cuttlefish-gpu-arm64.sh 1   # instance 1: adb 6520, webrtc 8443
+#   ./scripts/run-cuttlefish-gpu-arm64.sh 2   # instance 2: adb 6521, webrtc 8444
 
 FROM ubuntu:24.04
 
@@ -87,7 +87,7 @@ RUN gcc -shared -fPIC -o /usr/lib/tcp_nodelay.so /tmp/tcp_nodelay.c -ldl \
     && rm /tmp/tcp_nodelay.c \
     && echo "TCP_NODELAY library compiled"
 
-# The socket_vsock_proxy wrapper is created at runtime by run-cuttlefish-gpu.sh
+# The socket_vsock_proxy wrapper is created at runtime by run-cuttlefish-gpu-arm64.sh
 
 # Create the ubuntu user with passwordless sudo
 RUN id ubuntu &>/dev/null || useradd -m -s /bin/bash ubuntu \
@@ -106,5 +106,5 @@ EXPOSE 6520-6533 8443-8456 4723-4736 1443
 USER ubuntu
 WORKDIR /opt/cf/run
 
-# No entrypoint; run-cuttlefish-gpu.sh provides the launch script
+# No entrypoint; run-cuttlefish-gpu-arm64.sh provides the launch script
 CMD ["bash"]

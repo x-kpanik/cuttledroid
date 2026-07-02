@@ -20,14 +20,14 @@
 #      docker build -t cuttlefish-ubuntu24:latest .
 #
 # Usage:
-#   ./run-cuttlefish-gpu.sh [instance_num]    # single emulator
-#   ./run-cuttlefish-gpu.sh all [count]       # multiple emulators with 6s delay
+#   ./run-cuttlefish-gpu-arm64.sh [instance_num]    # single emulator
+#   ./run-cuttlefish-gpu-arm64.sh all [count]       # multiple emulators with 6s delay
 #
 # Examples:
-#   ./run-cuttlefish-gpu.sh 1     # single: adb:6520, webrtc:8443
-#   ./run-cuttlefish-gpu.sh 5     # single: adb:6524, webrtc:8447
-#   ./run-cuttlefish-gpu.sh all   # launch 14 emulators (default)
-#   ./run-cuttlefish-gpu.sh all 8 # launch 8 emulators
+#   ./run-cuttlefish-gpu-arm64.sh 1     # single: adb:6520, webrtc:8443
+#   ./run-cuttlefish-gpu-arm64.sh 5     # single: adb:6524, webrtc:8447
+#   ./run-cuttlefish-gpu-arm64.sh all   # launch 14 emulators (default)
+#   ./run-cuttlefish-gpu-arm64.sh all 8 # launch 8 emulators
 #
 # Environment variables:
 #   CUTTLEFISH_BASE - Path to pre-fetched base (default: /opt/cuttlefish-base)
@@ -39,7 +39,7 @@
 set -e
 
 # =============================================================================
-# Multi-instance mode: ./run-cuttlefish-gpu.sh all [count]
+# Multi-instance mode: ./run-cuttlefish-gpu-arm64.sh all [count]
 # =============================================================================
 if [ "$1" = "all" ]; then
   COUNT=${2:-8}
@@ -53,7 +53,7 @@ if [ "$1" = "all" ]; then
   # Phase 1: Start all containers quickly (skip boot wait)
   for i in $(seq 1 $COUNT); do
     echo "--- Starting container #$i of $COUNT ---"
-    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-gpu.sh" "$i"
+    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-gpu-arm64.sh" "$i"
     
     if [ $i -lt $COUNT ]; then
       sleep $DELAY

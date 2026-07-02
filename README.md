@@ -35,8 +35,8 @@ pick the pair that matches your host:
 
 | Host | Image (Dockerfile) | Launcher |
 |------|--------------------|----------|
-| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile`) | `scripts/run-cuttlefish-gpu.sh` |
-| x86_64 (NVIDIA desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-x86.sh` |
+| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile`) | `scripts/run-cuttlefish-gpu-arm64.sh` |
+| x86_64 (NVIDIA desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` |
 
 ## Quick start
 
@@ -55,8 +55,8 @@ sudo ./scripts/setup-host.sh
 sudo reboot
 
 # 4. Launch emulators
-./scripts/run-cuttlefish-gpu.sh 1        # a single instance
-./scripts/run-cuttlefish-gpu.sh all 14   # 14 instances
+./scripts/run-cuttlefish-gpu-arm64.sh 1        # a single instance
+./scripts/run-cuttlefish-gpu-arm64.sh all 14   # 14 instances
 ```
 
 ### x86_64 (desktop/laptop with an NVIDIA GPU)
@@ -79,7 +79,7 @@ docker run --rm -u 1000:1000 -e HOME=/home/ubuntu \
   cvd fetch --default_build=aosp-android-latest-release/aosp_cf_x86_64_only_phone-userdebug
 
 # 3. Launch
-./scripts/run-cuttlefish-x86.sh 1        # adb 6520, webrtc 8443
+./scripts/run-cuttlefish-gpu-x86.sh 1        # adb 6520, webrtc 8443
 ```
 
 ### A note on fetch "404" reports
@@ -105,10 +105,10 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 ├── Dockerfile              # ARM64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── Dockerfile.x86          # x86_64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── scripts/
-│   ├── setup-host.sh           # one-time host provisioning (ARM64)
-│   ├── run-cuttlefish-gpu.sh   # launch one or many GPU emulators (ARM64)
-│   ├── run-cuttlefish-x86.sh   # launch GPU emulators on x86_64 hosts
-│   └── install-and-launch.sh   # install an APK and start it on all devices
+│   ├── setup-host.sh                 # one-time host provisioning (ARM64)
+│   ├── run-cuttlefish-gpu-arm64.sh   # launch one or many GPU emulators (ARM64)
+│   ├── run-cuttlefish-gpu-x86.sh     # launch GPU emulators on x86_64 hosts
+│   └── install-and-launch.sh         # install an APK and start it on all devices
 ├── src/
 │   └── tcp_nodelay.c       # LD_PRELOAD shim: TCP_NODELAY for low-latency ADB
 └── docs/
@@ -120,9 +120,9 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 ### Launch
 
 ```bash
-./scripts/run-cuttlefish-gpu.sh 1        # instance 1 → adb 6520, webrtc 8443
-./scripts/run-cuttlefish-gpu.sh 5        # instance 5 → adb 6524, webrtc 8447
-./scripts/run-cuttlefish-gpu.sh all 8    # launch 8 instances
+./scripts/run-cuttlefish-gpu-arm64.sh 1        # instance 1 → adb 6520, webrtc 8443
+./scripts/run-cuttlefish-gpu-arm64.sh 5        # instance 5 → adb 6524, webrtc 8447
+./scripts/run-cuttlefish-gpu-arm64.sh all 8    # launch 8 instances
 ```
 
 ### Connect
@@ -152,7 +152,7 @@ replaces `gfxstream_guest_angle` with SwiftShader. It needs no GPU but is much
 slower, so treat it as a fallback:
 
 ```bash
-GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu.sh 1
+GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu-arm64.sh 1
 ```
 
 The Docker launcher still passes the NVIDIA devices through, so it expects an
@@ -220,7 +220,7 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
 
 ## Roadmap
 
-- [x] **x86_64 host support** — `Dockerfile.x86` + `scripts/run-cuttlefish-x86.sh`.
+- [x] **x86_64 host support** — `Dockerfile.x86` + `scripts/run-cuttlefish-gpu-x86.sh`.
   Fully self-contained container (in-container networking, no host services, no
   sudo). Verified on RTX 5080 / driver 595: guest renders through
   `ANGLE (NVIDIA, Vulkan)` via gfxstream. Not yet ported to x86: the
