@@ -68,18 +68,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js 20 (for Appium)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Appium server + UIAutomator2 driver
-RUN npm install -g appium@latest
-
-# Driver installs under ~/.appium, so install it as the ubuntu user
-USER ubuntu
-RUN appium driver install uiautomator2
-USER root
+# Appium is NOT part of this image — it lives in the optional overlay
+# appium/Dockerfile (build it FROM this image when you need Appium)
 
 # Build the TCP_NODELAY LD_PRELOAD shim (see src/tcp_nodelay.c)
 COPY src/tcp_nodelay.c /tmp/tcp_nodelay.c
@@ -100,8 +90,8 @@ ENV CF_RUN=/opt/cf/run
 # GPU env vars (__EGL_VENDOR_LIBRARY_FILENAMES, VK_ICD_FILENAMES) are set at
 # runtime via docker run -e; the exact filenames vary per host.
 
-# Ports: ADB 6520-6533, WebRTC 8443-8456, Appium 4723-4736
-EXPOSE 6520-6533 8443-8456 4723-4736 1443
+# Ports: ADB 6520-6533, WebRTC 8443-8456 (Appium ports live in the appium/ overlay)
+EXPOSE 6520-6533 8443-8456 1443
 
 USER ubuntu
 WORKDIR /opt/cf/run
