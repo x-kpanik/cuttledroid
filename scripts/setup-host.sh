@@ -145,18 +145,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 mkdir -p /opt/cuttlefish
 cp "$SCRIPT_DIR"/*.sh /opt/cuttlefish/ 2>/dev/null || true
-cp "$REPO_ROOT"/Dockerfile /opt/cuttlefish/ 2>/dev/null || true
+cp "$REPO_ROOT"/Dockerfile.arm64 /opt/cuttlefish/ 2>/dev/null || true
 chmod -R 755 /opt/cuttlefish
 chmod +x /opt/cuttlefish/*.sh
 
 echo ""
 echo "Step 12: Build Docker image..."
-if [ -f "/opt/cuttlefish/Dockerfile" ]; then
+if [ -f "/opt/cuttlefish/Dockerfile.arm64" ]; then
     cd /opt/cuttlefish
-    docker build -t cuttlefish-ubuntu24:latest .
+    docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 else
-    echo "WARNING: Dockerfile not found"
-    echo "Please build manually: docker build -t cuttlefish-ubuntu24:latest ."
+    echo "WARNING: Dockerfile.arm64 not found"
+    echo "Please build manually: docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest ."
 fi
 
 echo ""

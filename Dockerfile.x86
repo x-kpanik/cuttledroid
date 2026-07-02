@@ -1,5 +1,5 @@
-# Cuttlefish runtime image for x86_64 (Ubuntu 24.04) — adapted from cuttledroid's
-# ARM64 Dockerfile: same Google apt repo (amd64 debs exist), Appium/Node dropped,
+# Cuttlefish runtime image for x86_64 (Ubuntu 24.04) — adapted from
+# Dockerfile.arm64: same Google apt repo (amd64 debs exist), Appium/Node dropped,
 # qemu-system-arm dropped (crosvm comes from the fetched cvd-host_package).
 FROM ubuntu:24.04
 

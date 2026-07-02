@@ -11,7 +11,7 @@
 #   - Host NVIDIA libs (read-only) - glibc libraries for the GPU
 #
 # Build:
-#   docker build -t cuttlefish-ubuntu24:latest .
+#   docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 #
 # Prerequisites on host:
 #   mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base

@@ -17,7 +17,7 @@
 #      cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 #
 #   2. Build image ONCE:
-#      docker build -t cuttlefish-ubuntu24:latest .
+#      docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 #
 # Usage:
 #   ./run-cuttlefish-gpu-arm64.sh [instance_num]    # single emulator
@@ -244,7 +244,7 @@ fi
 # Check image exists
 if ! docker image inspect $IMAGE_NAME &>/dev/null; then
     echo "ERROR: Image '$IMAGE_NAME' not found!"
-    echo "Build it first: docker build -t cuttlefish-ubuntu24:latest ."
+    echo "Build it first: docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest ."
     exit 1
 fi
 

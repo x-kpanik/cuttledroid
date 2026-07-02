@@ -37,7 +37,7 @@ pick the pair that matches your host:
 
 | Host | Image (Dockerfile) | Launcher |
 |------|--------------------|----------|
-| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile`) | `scripts/run-cuttlefish-gpu-arm64.sh` |
+| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` |
 | x86_64 (NVIDIA desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` |
 
 ## Quick start
@@ -104,7 +104,7 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 
 ```
 .
-├── Dockerfile              # ARM64 + NVIDIA runtime image (Ubuntu 24.04)
+├── Dockerfile.arm64        # ARM64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── Dockerfile.x86          # x86_64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── appium/                 # optional Appium overlay image (server + UIAutomator2)
 ├── scripts/
