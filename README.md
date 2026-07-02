@@ -158,6 +158,10 @@ ssh -L 8443:localhost:8443 ubuntu@<HOST_IP>
 # then open https://localhost:8443 in a browser
 ```
 
+The operator root page lists all devices; a direct link to one device is
+`https://localhost:8443/devices/cvd-1/files/client.html` (the old
+`client.html?deviceId=...` URL is gone from cuttlefish-operator 1.5x).
+
 ### Install and launch an app on every running device
 
 ```bash

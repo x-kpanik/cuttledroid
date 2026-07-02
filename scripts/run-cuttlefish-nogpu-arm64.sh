@@ -110,7 +110,7 @@ if [ "$1" = "all" ]; then
     DEVICES=$(curl -sk https://localhost:$WEBRTC_PORT/devices 2>/dev/null || echo "[]")
     if echo "$DEVICES" | grep -q "cvd-$i"; then
       echo "nogpu-$i: ADB=$PORT WebRTC=$WEBRTC_PORT OK"
-      echo "   WebRTC: https://localhost:${WEBRTC_PORT}/client.html?deviceId=cvd-${i}"
+      echo "   WebRTC: https://localhost:${WEBRTC_PORT}/devices/cvd-${i}/files/client.html"
       WEBRTC_OK=$((WEBRTC_OK + 1))
     else
       echo "nogpu-$i: ADB=$PORT WebRTC=$WEBRTC_PORT MISSING"
@@ -418,7 +418,7 @@ echo ""
 echo "Access:"
 echo "   ADB:     adb connect localhost:$ADB_PORT"
 echo "   WebRTC:  https://localhost:$WEBRTC_PORT"
-echo "   WebRTC:  https://localhost:${WEBRTC_PORT}/client.html?deviceId=cvd-${INSTANCE_NUM}"
+echo "   WebRTC:  https://localhost:${WEBRTC_PORT}/devices/cvd-${INSTANCE_NUM}/files/client.html"
 echo ""
 echo "Management:"
 echo "   Logs:    docker logs -f $CONTAINER_NAME"
@@ -500,5 +500,5 @@ echo "   Hidden ANR/crash dialogs (auto-kill enabled)"
 
 echo ""
 echo "Device $DEVICE_SERIAL is ready (SwiftShader)!"
-echo "You can view WebRTC at: https://localhost:${WEBRTC_PORT}/client.html?deviceId=cvd-${INSTANCE_NUM}"
+echo "You can view WebRTC at: https://localhost:${WEBRTC_PORT}/devices/cvd-${INSTANCE_NUM}/files/client.html"
 echo ""
