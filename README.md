@@ -9,6 +9,11 @@ Run multiple GPU-accelerated [Cuttlefish](https://source.android.com/docs/device
 Android virtual devices in Docker on ARM64 and x86_64 hosts with NVIDIA GPUs.
 Hardware-accelerated graphics via `gfxstream` + Vulkan.
 
+Android 16 booted with GPU rendering (x86_64 host, RTX 5080; in-guest renderer:
+`ANGLE (NVIDIA, Vulkan 1.3.0 (NVIDIA Virtio-GPU GFXStream))`):
+
+![Android 16 home screen rendered through gfxstream on an NVIDIA GPU](docs/screenshot-gpu.png)
+
 ## Features
 
 - **GPU acceleration** — `gfxstream` with the NVIDIA Vulkan backend.
