@@ -12,7 +12,7 @@
 #      mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
 #      cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 #   2. Build image ONCE:
-#      docker build -t cuttlefish-ubuntu24:latest .
+#      docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 #   3. cuttlefish-host-resources running on the host (see setup-host.sh)
 #
 # Usage:
@@ -184,7 +184,7 @@ fi
 # Check image exists
 if ! docker image inspect $IMAGE_NAME &>/dev/null; then
     echo "ERROR: Image '$IMAGE_NAME' not found!"
-    echo "Build it first: docker build -t cuttlefish-ubuntu24:latest ."
+    echo "Build it first: docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest ."
     exit 1
 fi
 

@@ -270,11 +270,11 @@ in `./bin/`. Use a numeric build ID, not a branch name — a branch name such as
 
 ```bash
 cd ~/cuttlefish
-docker build -t cuttlefish-ubuntu24:latest .
+docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 docker image list | grep cuttlefish-ubuntu24
 ```
 
-The Dockerfile lives at the repo root. The image is intentionally small
+The ARM64 Dockerfile is `Dockerfile.arm64` at the repo root. The image is intentionally small
 (~200 MB): Ubuntu 24.04 (glibc 2.39, matching the host) plus runtime
 dependencies (`libegl`, `libgl`, `adb`). It ships no Cuttlefish binaries and no
 Android images; both come from the read-only CF_BASE mount. See "Docker
@@ -690,8 +690,8 @@ docker run --entrypoint bash ... cuttlefish-ubuntu24:latest -lc "<script>"
 
 ### Dockerfile
 
-The Dockerfile is at the repo root. Build with
-`docker build -t cuttlefish-ubuntu24:latest .`.
+The ARM64 Dockerfile is `Dockerfile.arm64` at the repo root. Build with
+`docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .`.
 
 ```dockerfile
 FROM ubuntu:24.04
@@ -1314,7 +1314,7 @@ Build pipeline (GitLab):
 build-emulator-image:
   stage: build
   script:
-    - docker build -t cuttlefish-ubuntu24:latest .
+    - docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
     - docker tag cuttlefish-ubuntu24:latest $CI_REGISTRY/cuttlefish-ubuntu24:latest
     - docker push $CI_REGISTRY/cuttlefish-ubuntu24:latest
   only:
