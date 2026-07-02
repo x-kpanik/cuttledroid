@@ -76,7 +76,7 @@ docker build -f Dockerfile.x86 -t cuttlefish-x86:latest .
 mkdir -p ~/cuttlefish-base-x86
 docker run --rm -u 1000:1000 -e HOME=/home/ubuntu \
   -v ~/cuttlefish-base-x86:/base -w /base cuttlefish-x86:latest \
-  cvd fetch --default_build=14654133/aosp_cf_x86_64_only_phone-userdebug
+  cvd fetch --default_build=aosp-android-latest-release/aosp_cf_x86_64_only_phone-userdebug
 
 # 3. Launch
 ./scripts/run-cuttlefish-x86.sh 1        # adb 6520, webrtc 8443
@@ -84,15 +84,19 @@ docker run --rm -u 1000:1000 -e HOME=/home/ubuntu \
 
 ### A note on fetch "404" reports
 
-The pinned build `14654133` exists for both targets and downloads fine
-(branch `aosp-android-latest-release`). Two things *do* return 404 and are
-easily mistaken for a missing build:
+All fetch commands above use the branch form
+(`aosp-android-latest-release/<target>`), which always resolves to the latest
+green build and cannot rot. Three things *do* return 404 and are easily
+mistaken for a missing build:
 
+- The `aosp-main` branch — it no longer publishes public Cuttlefish artifacts.
+- Old pinned build ids — Google CI garbage-collects them over time (the
+  previously pinned `14654133` still downloads fine as of 2026-07, but prefer
+  the branch form).
 - `HEAD` requests to `ci.android.com/.../raw/...` — the service only routes
   `GET`, so `curl -I` always shows 404. Use `curl -L` instead.
-- The `aosp-main` branch — it no longer publishes public Cuttlefish artifacts.
-  Fetch from `aosp-android-latest-release` (pin a build id, or use the branch
-  name to get the latest green build).
+
+See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 
 ## Repository layout
 

@@ -15,10 +15,11 @@
 #     inodes), so no host-GID juggling.
 #
 # Prerequisites:
-#   1. Fetch ONCE on host (any dir, default ~/cuttlefish-base-x86):
+#   1. Fetch ONCE on host (any dir, default ~/cuttlefish-base-x86; branch form
+#      fetches the latest green build — pinned ids rot):
 #      docker run --rm -u 1000:1000 -e HOME=/home/ubuntu \
 #        -v ~/cuttlefish-base-x86:/base -w /base cuttlefish-x86:latest \
-#        cvd fetch --default_build=14654133/aosp_cf_x86_64_only_phone-userdebug
+#        cvd fetch --default_build=aosp-android-latest-release/aosp_cf_x86_64_only_phone-userdebug
 #   2. Build image ONCE:
 #      docker build -f Dockerfile.x86 -t cuttlefish-x86:latest .
 #
