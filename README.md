@@ -46,8 +46,8 @@ whether an NVIDIA GPU is available:
 
 | Host | Image (Dockerfile) | With GPU (gfxstream) | Without GPU (SwiftShader) |
 |------|--------------------|----------------------|---------------------------|
-| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` | `scripts/run-cuttlefish-nogpu-arm64.sh` |
-| x86_64 (desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` | `scripts/run-cuttlefish-nogpu-x86.sh` |
+| ARM64 | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` | `scripts/run-cuttlefish-nogpu-arm64.sh` |
+| x86_64 | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` | `scripts/run-cuttlefish-nogpu-x86.sh` |
 
 All four take the same arguments (`N` for a single instance, `all [count]`
 for many) and use the same ports (adb `6519+N`, webrtc `8442+N`). The no-GPU
@@ -111,6 +111,9 @@ mistaken for a missing build:
   the branch form).
 - `HEAD` requests to `ci.android.com/.../raw/...` — the service only routes
   `GET`, so `curl -I` always shows 404. Use `curl -L` instead.
+
+Browse the available builds (build ids, targets, artifacts) in Google's CI at
+[ci.android.com — aosp-android-latest-release grid](https://ci.android.com/builds/branches/aosp-android-latest-release/grid).
 
 See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 
@@ -262,6 +265,7 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
 
 - [Cuttlefish documentation (AOSP)](https://source.android.com/docs/devices/cuttlefish)
 - [android-cuttlefish — source and releases](https://github.com/google/android-cuttlefish)
+- [ci.android.com — Cuttlefish builds (aosp-android-latest-release)](https://ci.android.com/builds/branches/aosp-android-latest-release/grid)
 
 ## Roadmap
 
