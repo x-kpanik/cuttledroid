@@ -3,7 +3,7 @@
 # Cuttlefish ARM64 host tools (cvd-host_package.tar.gz) are musl-based, while the
 # NVIDIA Vulkan/EGL drivers are glibc-based. The launcher bridges this with
 # symlinks in $FETCH/hostlibs/ and a minimal LD_LIBRARY_PATH
-# (see scripts/run-cuttlefish-gpu.sh).
+# (see scripts/run-cuttlefish-gpu-arm64.sh).
 #
 # Layout:
 #   - CF_BASE (mounted read-only) - pre-fetched Android images + cvd binaries (musl)
@@ -11,15 +11,17 @@
 #   - Host NVIDIA libs (read-only) - glibc libraries for the GPU
 #
 # Build:
-#   docker build -t cuttlefish-ubuntu24:latest .
+#   docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 #
 # Prerequisites on host:
 #   mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-#   cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+#   cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
+#   (branch form = latest green build; pinned build ids rot once Google CI
+#   garbage-collects them. aosp-main is dead for public fetches — 404.)
 #
 # Run:
-#   ./scripts/run-cuttlefish-gpu.sh 1   # instance 1: adb 6520, webrtc 8443
-#   ./scripts/run-cuttlefish-gpu.sh 2   # instance 2: adb 6521, webrtc 8444
+#   ./scripts/run-cuttlefish-gpu-arm64.sh 1   # instance 1: adb 6520, webrtc 8443
+#   ./scripts/run-cuttlefish-gpu-arm64.sh 2   # instance 2: adb 6521, webrtc 8444
 
 FROM ubuntu:24.04
 
@@ -66,18 +68,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js 20 (for Appium)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
-# Appium server + UIAutomator2 driver
-RUN npm install -g appium@latest
-
-# Driver installs under ~/.appium, so install it as the ubuntu user
-USER ubuntu
-RUN appium driver install uiautomator2
-USER root
+# Appium is NOT part of this image — it lives in the optional overlay
+# appium/Dockerfile (build it FROM this image when you need Appium)
 
 # Build the TCP_NODELAY LD_PRELOAD shim (see src/tcp_nodelay.c)
 COPY src/tcp_nodelay.c /tmp/tcp_nodelay.c
@@ -85,7 +77,7 @@ RUN gcc -shared -fPIC -o /usr/lib/tcp_nodelay.so /tmp/tcp_nodelay.c -ldl \
     && rm /tmp/tcp_nodelay.c \
     && echo "TCP_NODELAY library compiled"
 
-# The socket_vsock_proxy wrapper is created at runtime by run-cuttlefish-gpu.sh
+# The socket_vsock_proxy wrapper is created at runtime by run-cuttlefish-gpu-arm64.sh
 
 # Create the ubuntu user with passwordless sudo
 RUN id ubuntu &>/dev/null || useradd -m -s /bin/bash ubuntu \
@@ -98,11 +90,11 @@ ENV CF_RUN=/opt/cf/run
 # GPU env vars (__EGL_VENDOR_LIBRARY_FILENAMES, VK_ICD_FILENAMES) are set at
 # runtime via docker run -e; the exact filenames vary per host.
 
-# Ports: ADB 6520-6533, WebRTC 8443-8456, Appium 4723-4736
-EXPOSE 6520-6533 8443-8456 4723-4736 1443
+# Ports: ADB 6520-6533, WebRTC 8443-8456 (Appium ports live in the appium/ overlay)
+EXPOSE 6520-6533 8443-8456 1443
 
 USER ubuntu
 WORKDIR /opt/cf/run
 
-# No entrypoint; run-cuttlefish-gpu.sh provides the launch script
+# No entrypoint; run-cuttlefish-gpu-arm64.sh provides the launch script
 CMD ["bash"]

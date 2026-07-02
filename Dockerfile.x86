@@ -1,0 +1,54 @@
+# Cuttlefish runtime image for x86_64 (Ubuntu 24.04) — adapted from
+# Dockerfile.arm64: same Google apt repo (amd64 debs exist), Appium/Node dropped,
+# qemu-system-arm dropped (crosvm comes from the fetched cvd-host_package).
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg \
+    && curl -fsSL https://us-apt.pkg.dev/doc/repo-signing-key.gpg \
+       -o /etc/apt/trusted.gpg.d/artifact-registry.asc \
+    && echo "deb https://us-apt.pkg.dev/projects/android-cuttlefish-artifacts android-cuttlefish main" \
+       > /etc/apt/sources.list.d/artifact-registry.list \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cuttlefish-base \
+    cuttlefish-user \
+    sudo \
+    android-tools-adb \
+    iproute2 \
+    iptables \
+    net-tools \
+    bridge-utils \
+    dnsmasq \
+    libegl1 \
+    libgl1 \
+    libgbm1 \
+    libdrm2 \
+    libvulkan1 \
+    vulkan-tools \
+    libx11-6 \
+    libxext6 \
+    libstdc++6 \
+    procps \
+    python3 \
+    socat \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ubuntu:24.04 ships user ubuntu (uid 1000); kvm/cvdnetwork/render may not exist
+# in the base image or after postinst under docker — create them defensively
+RUN groupadd -f kvm \
+    && groupadd -f cvdnetwork \
+    && groupadd -f render \
+    && usermod -aG kvm,cvdnetwork,render ubuntu \
+    && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+ENV HOME=/home/ubuntu
+WORKDIR /home/ubuntu
+
+EXPOSE 6520 8443 1443
+
+CMD ["bash"]

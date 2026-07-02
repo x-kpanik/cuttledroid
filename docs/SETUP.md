@@ -254,7 +254,9 @@ echo -n "Docker: "; docker info &>/dev/null && echo "OK" || echo "MISSING"
 
 ```bash
 mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+# Branch form = latest green build; see "cvd fetch fails with 404" in
+# Troubleshooting before pinning a numeric build ID.
+cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 ```
 
 This downloads the Android images plus Cuttlefish binaries (~3-5 GB) into
@@ -268,11 +270,11 @@ in `./bin/`. Use a numeric build ID, not a branch name — a branch name such as
 
 ```bash
 cd ~/cuttlefish
-docker build -t cuttlefish-ubuntu24:latest .
+docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 docker image list | grep cuttlefish-ubuntu24
 ```
 
-The Dockerfile lives at the repo root. The image is intentionally small
+The ARM64 Dockerfile is `Dockerfile.arm64` at the repo root. The image is intentionally small
 (~200 MB): Ubuntu 24.04 (glibc 2.39, matching the host) plus runtime
 dependencies (`libegl`, `libgl`, `adb`). It ships no Cuttlefish binaries and no
 Android images; both come from the read-only CF_BASE mount. See "Docker
@@ -329,7 +331,7 @@ already shows the software variant.
 Through the Docker launcher, override `GPU_MODE`:
 
 ```bash
-GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu.sh 1
+GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu-arm64.sh 1
 ```
 
 Note: the Docker launcher passes the host's NVIDIA devices through, so it still
@@ -344,11 +346,11 @@ contained to one container, and an instance can be restarted on its own.
 
 ```bash
 # Start N emulators (one container each)
-./scripts/run-cuttlefish-gpu.sh all N
+./scripts/run-cuttlefish-gpu-arm64.sh all N
 
 # Single instance by index (ADB 6519+N, WebRTC 8442+N)
-./scripts/run-cuttlefish-gpu.sh 1   # ADB:6520, WebRTC:8443
-./scripts/run-cuttlefish-gpu.sh 2   # ADB:6521, WebRTC:8444
+./scripts/run-cuttlefish-gpu-arm64.sh 1   # ADB:6520, WebRTC:8443
+./scripts/run-cuttlefish-gpu-arm64.sh 2   # ADB:6521, WebRTC:8444
 ```
 
 ADB ports run `localhost:6520` ... `localhost:6534` for 15 instances. Container
@@ -517,11 +519,11 @@ ssh -L 8443:localhost:8443 -L 8444:localhost:8444 ubuntu@<AWS_IP>
 
 ## Configuration
 
-Environment variables for `scripts/run-cuttlefish-gpu.sh`:
+Environment variables for `scripts/run-cuttlefish-gpu-arm64.sh`:
 
 ```bash
 X_RES=1920 Y_RES=1080 CPUS=6 MEMORY_MB=6144 \
-  ./scripts/run-cuttlefish-gpu.sh cuttlefish-emu-1 6520 8443
+  ./scripts/run-cuttlefish-gpu-arm64.sh cuttlefish-emu-1 6520 8443
 ```
 
 | Variable | Default | Description |
@@ -558,7 +560,7 @@ directory and pointing `LD_LIBRARY_PATH` only at that directory.
 With the verified `gfxstream_guest_angle + skiavk` mode, only Vulkan symlinks are
 required. ANGLE translates OpenGL to Vulkan inside Android, so host-side EGL/GLES
 libraries are not needed. The implementation lives in
-`scripts/run-cuttlefish-gpu.sh`.
+`scripts/run-cuttlefish-gpu-arm64.sh`.
 
 ```bash
 mkdir -p "$FETCH/hostlibs"
@@ -688,8 +690,8 @@ docker run --entrypoint bash ... cuttlefish-ubuntu24:latest -lc "<script>"
 
 ### Dockerfile
 
-The Dockerfile is at the repo root. Build with
-`docker build -t cuttlefish-ubuntu24:latest .`.
+The ARM64 Dockerfile is `Dockerfile.arm64` at the repo root. Build with
+`docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .`.
 
 ```dockerfile
 FROM ubuntu:24.04
@@ -1010,14 +1012,33 @@ newgrp video
 
 ### cvd fetch fails with 404
 
-Use a numeric build ID, not a branch name:
+Three distinct causes, none of which mean "the build is gone":
 
-```bash
-# Fails without auth:
-cvd fetch --default_build=aosp-main/aosp_cf_arm64_only_phone-userdebug
-# Works:
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
-```
+1. **The `aosp-main` branch is dead for public fetches.** It no longer publishes
+   public Cuttlefish artifacts (and its old builds have been garbage-collected).
+   This is a 404, not an auth problem. Use `aosp-android-latest-release`:
+
+   ```bash
+   # Fails (dead branch):
+   cvd fetch --default_build=aosp-main/aosp_cf_arm64_only_phone-userdebug
+   # Works (latest green build on the release branch):
+   cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
+   ```
+
+2. **Pinned build IDs eventually rot.** Google CI garbage-collects old
+   artifacts, so a numeric ID that works today can 404 later. Prefer the
+   branch form above; pin an ID only for reproducible CI caches and expect
+   to refresh it. Resolve the current latest ID with:
+
+   ```bash
+   curl -s -o /dev/null -w '%{redirect_url}\n' \
+     "https://ci.android.com/builds/latest/branches/aosp-android-latest-release/targets/aosp_cf_arm64_only_phone-userdebug/view/BUILD_INFO"
+   # → .../builds/submitted/<BUILD_ID>/...
+   ```
+
+3. **`HEAD` requests to `ci.android.com/.../raw/...` always return 404** — the
+   service only routes `GET`. `curl -I` "verifying" an artifact proves nothing;
+   use `curl -L` (optionally with `-r 0-0`).
 
 ### launch_cvd: "Could not read from dir /home/ubuntu/etc/cvd_config"
 
@@ -1082,7 +1103,7 @@ docker exec cuttlefish-emu-1 ls -la /opt/cf/base/*.img
 
 ```bash
 docker stats cuttlefish-emu-1
-MEMORY_MB=6144 ./scripts/run-cuttlefish-gpu.sh ...
+MEMORY_MB=6144 ./scripts/run-cuttlefish-gpu-arm64.sh ...
 docker exec cuttlefish-emu-1 cat /opt/cf/run/cuttlefish/instances/cvd-1/logs/launcher.log | grep -i error
 ```
 
@@ -1129,7 +1150,7 @@ Parallel launch logs (logs go to `/tmp/emu-N.log`):
 
 ```bash
 for i in $(seq 1 14); do
-  ./scripts/run-cuttlefish-gpu.sh $i > /tmp/emu-$i.log 2>&1 &
+  ./scripts/run-cuttlefish-gpu-arm64.sh $i > /tmp/emu-$i.log 2>&1 &
   sleep 2
 done
 wait
@@ -1293,7 +1314,7 @@ Build pipeline (GitLab):
 build-emulator-image:
   stage: build
   script:
-    - docker build -t cuttlefish-ubuntu24:latest .
+    - docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
     - docker tag cuttlefish-ubuntu24:latest $CI_REGISTRY/cuttlefish-ubuntu24:latest
     - docker push $CI_REGISTRY/cuttlefish-ubuntu24:latest
   only:
@@ -1305,15 +1326,17 @@ Use a node-local cache path, not a home directory — `hostPath` to a user home
 does not work in Kubernetes.
 
 ```bash
-mkdir -p /var/cache/cuttlefish/builds/14654133
-cd /var/cache/cuttlefish/builds/14654133
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+# Resolve the current <BUILD_ID> first (see "cvd fetch fails with 404" in
+# Troubleshooting); pinned IDs are fine for caches but rot over time.
+mkdir -p /var/cache/cuttlefish/builds/<BUILD_ID>
+cd /var/cache/cuttlefish/builds/<BUILD_ID>
+cvd fetch --default_build=<BUILD_ID>/aosp_cf_arm64_only_phone-userdebug
 ```
 
 ```yaml
 # Kubernetes node-local cache
 hostPath:
-  path: /var/cache/cuttlefish/builds/14654133/aosp_cf_arm64_only_phone-userdebug
+  path: /var/cache/cuttlefish/builds/<BUILD_ID>/aosp_cf_arm64_only_phone-userdebug
 ```
 
 Test pipeline with isolation by job ID. Container and volume names include
@@ -1324,13 +1347,13 @@ read-only and must not be cleaned; only CF_RUN volumes are per-job.
 test:
   stage: test
   variables:
-    CUTTLEFISH_BASE: /var/cache/cuttlefish/builds/14654133
+    CUTTLEFISH_BASE: /var/cache/cuttlefish/builds/<BUILD_ID>
   script:
     - export CONTAINER_NAME="cf-emu-${CI_JOB_ID}"
     - export VOLUME_NAME="cf-run-${CI_JOB_ID}"
     - docker pull $CI_REGISTRY/cuttlefish-ubuntu24:latest
     - docker tag $CI_REGISTRY/cuttlefish-ubuntu24:latest cuttlefish-ubuntu24:latest
-    - RESET_RUNTIME=true ./scripts/run-cuttlefish-gpu.sh $CONTAINER_NAME 6520 8443
+    - RESET_RUNTIME=true ./scripts/run-cuttlefish-gpu-arm64.sh $CONTAINER_NAME 6520 8443
     - ./wait-for-boot.sh 1 300
     - adb connect localhost:6520
     - adb -s localhost:6520 install -r app.apk
@@ -1347,7 +1370,8 @@ volumes accumulate (GB per job), container names conflict, and the disk fills up
 
 | Build ID | Target | Notes |
 |----------|--------|-------|
-| 14654133 | aosp_cf_arm64_only_phone-userdebug | Verified working |
+| 14654133 | aosp_cf_arm64_only_phone-userdebug | Verified working (re-checked 2026-07-02; may be GC'd eventually) |
+| 15660610 | aosp_cf_{arm64,x86_64}_only_phone-userdebug | Latest green on `aosp-android-latest-release` as of 2026-07-02 |
 
 Check available builds:
 

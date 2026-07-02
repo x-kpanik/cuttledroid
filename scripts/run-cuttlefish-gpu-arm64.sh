@@ -12,22 +12,22 @@
 #   - VK_ICD_FILENAMES for Vulkan ICD visibility
 #
 # Prerequisites:
-#   1. Fetch ONCE on host:
+#   1. Fetch ONCE on host (branch form = latest green build; pinned ids rot):
 #      mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-#      cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+#      cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 #
 #   2. Build image ONCE:
-#      docker build -t cuttlefish-ubuntu24:latest .
+#      docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 #
 # Usage:
-#   ./run-cuttlefish-gpu.sh [instance_num]    # single emulator
-#   ./run-cuttlefish-gpu.sh all [count]       # multiple emulators with 6s delay
+#   ./run-cuttlefish-gpu-arm64.sh [instance_num]    # single emulator
+#   ./run-cuttlefish-gpu-arm64.sh all [count]       # multiple emulators with 6s delay
 #
 # Examples:
-#   ./run-cuttlefish-gpu.sh 1     # single: adb:6520, webrtc:8443
-#   ./run-cuttlefish-gpu.sh 5     # single: adb:6524, webrtc:8447
-#   ./run-cuttlefish-gpu.sh all   # launch 14 emulators (default)
-#   ./run-cuttlefish-gpu.sh all 8 # launch 8 emulators
+#   ./run-cuttlefish-gpu-arm64.sh 1     # single: adb:6520, webrtc:8443
+#   ./run-cuttlefish-gpu-arm64.sh 5     # single: adb:6524, webrtc:8447
+#   ./run-cuttlefish-gpu-arm64.sh all   # launch 14 emulators (default)
+#   ./run-cuttlefish-gpu-arm64.sh all 8 # launch 8 emulators
 #
 # Environment variables:
 #   CUTTLEFISH_BASE - Path to pre-fetched base (default: /opt/cuttlefish-base)
@@ -39,7 +39,7 @@
 set -e
 
 # =============================================================================
-# Multi-instance mode: ./run-cuttlefish-gpu.sh all [count]
+# Multi-instance mode: ./run-cuttlefish-gpu-arm64.sh all [count]
 # =============================================================================
 if [ "$1" = "all" ]; then
   COUNT=${2:-8}
@@ -53,7 +53,7 @@ if [ "$1" = "all" ]; then
   # Phase 1: Start all containers quickly (skip boot wait)
   for i in $(seq 1 $COUNT); do
     echo "--- Starting container #$i of $COUNT ---"
-    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-gpu.sh" "$i"
+    SKIP_BOOT_WAIT=1 "$SCRIPT_DIR/run-cuttlefish-gpu-arm64.sh" "$i"
     
     if [ $i -lt $COUNT ]; then
       sleep $DELAY
@@ -219,7 +219,6 @@ else
 fi
 echo "ADB Port:      $ADB_PORT"
 echo "WebRTC:        $WEBRTC_PORT"
-echo "Appium:        $APPIUM_PORT"
 echo "Resolution:    ${X_RES}x${Y_RES} @ ${DPI}dpi"
 echo "Resources:     ${CPUS} vCPUs, ${MEMORY_MB}MB RAM, pinned to CPUs ${CPU_SET}"
 echo "GPU Mode:      $GPU_MODE"
@@ -233,7 +232,7 @@ if [ ! -d "$CUTTLEFISH_BASE" ]; then
     echo ""
     echo "Fetch ONCE with:"
     echo "  mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base"
-    echo "  cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug"
+    echo "  cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug"
     exit 1
 fi
 
@@ -245,7 +244,7 @@ fi
 # Check image exists
 if ! docker image inspect $IMAGE_NAME &>/dev/null; then
     echo "ERROR: Image '$IMAGE_NAME' not found!"
-    echo "Build it first: docker build -t cuttlefish-ubuntu24:latest ."
+    echo "Build it first: docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest ."
     exit 1
 fi
 

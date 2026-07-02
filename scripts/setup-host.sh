@@ -128,7 +128,14 @@ echo "Step 10: Fetch Android image (cvd fetch)..."
 CUTTLEFISH_BASE="/opt/cuttlefish-base"
 mkdir -p "$CUTTLEFISH_BASE"
 chown $USERNAME:$USERNAME "$CUTTLEFISH_BASE"
-sudo -u $USERNAME bash -c "cd $CUTTLEFISH_BASE && cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug"
+# Fetch by BRANCH (latest green build) instead of a pinned build id: pinned ids
+# eventually get garbage-collected from Google CI and start returning 404.
+# To pin a specific build, use e.g. 15660610/aosp_cf_arm64_only_phone-userdebug.
+# NOTE: aosp-main no longer publishes public Cuttlefish artifacts (404) — only
+# aosp-android-latest-release works. HEAD requests to ci.android.com also 404
+# by design; that is not a missing build.
+ANDROID_BUILD="${ANDROID_BUILD:-aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug}"
+sudo -u $USERNAME bash -c "cd $CUTTLEFISH_BASE && cvd fetch --default_build=$ANDROID_BUILD"
 # Make readable by all users
 chmod -R 755 "$CUTTLEFISH_BASE"
 
@@ -138,18 +145,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 mkdir -p /opt/cuttlefish
 cp "$SCRIPT_DIR"/*.sh /opt/cuttlefish/ 2>/dev/null || true
-cp "$REPO_ROOT"/Dockerfile /opt/cuttlefish/ 2>/dev/null || true
+cp "$REPO_ROOT"/Dockerfile.arm64 /opt/cuttlefish/ 2>/dev/null || true
 chmod -R 755 /opt/cuttlefish
 chmod +x /opt/cuttlefish/*.sh
 
 echo ""
 echo "Step 12: Build Docker image..."
-if [ -f "/opt/cuttlefish/Dockerfile" ]; then
+if [ -f "/opt/cuttlefish/Dockerfile.arm64" ]; then
     cd /opt/cuttlefish
-    docker build -t cuttlefish-ubuntu24:latest .
+    docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest .
 else
-    echo "WARNING: Dockerfile not found"
-    echo "Please build manually: docker build -t cuttlefish-ubuntu24:latest ."
+    echo "WARNING: Dockerfile.arm64 not found"
+    echo "Please build manually: docker build -f Dockerfile.arm64 -t cuttlefish-ubuntu24:latest ."
 fi
 
 echo ""
@@ -167,6 +174,6 @@ echo "  5. DRI:     ls -la /dev/dri/"
 echo ""
 echo "Then run emulators (any user can run):"
 echo "  cd /opt/cuttlefish"
-echo "  ./run-cuttlefish-gpu.sh all 14  # all 14 emulators"
-echo "  ./run-cuttlefish-gpu.sh 1       # single instance"
+echo "  ./run-cuttlefish-gpu-arm64.sh all 14  # all 14 emulators"
+echo "  ./run-cuttlefish-gpu-arm64.sh 1       # single instance"
 echo ""
