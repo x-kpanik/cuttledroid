@@ -3,7 +3,7 @@
 // round-trip latency for the many small messages the protocol exchanges.
 //
 // Built into the runtime image and loaded via LD_PRELOAD around launch_cvd's
-// socket_vsock_proxy (see scripts/run-cuttlefish-gpu.sh).
+// socket_vsock_proxy (see scripts/run-cuttlefish-gpu-arm64.sh).
 //
 // Build: gcc -shared -fPIC -o /usr/lib/tcp_nodelay.so src/tcp_nodelay.c -ldl
 #define _GNU_SOURCE

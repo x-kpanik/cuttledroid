@@ -331,7 +331,7 @@ already shows the software variant.
 Through the Docker launcher, override `GPU_MODE`:
 
 ```bash
-GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu.sh 1
+GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu-arm64.sh 1
 ```
 
 Note: the Docker launcher passes the host's NVIDIA devices through, so it still
@@ -346,11 +346,11 @@ contained to one container, and an instance can be restarted on its own.
 
 ```bash
 # Start N emulators (one container each)
-./scripts/run-cuttlefish-gpu.sh all N
+./scripts/run-cuttlefish-gpu-arm64.sh all N
 
 # Single instance by index (ADB 6519+N, WebRTC 8442+N)
-./scripts/run-cuttlefish-gpu.sh 1   # ADB:6520, WebRTC:8443
-./scripts/run-cuttlefish-gpu.sh 2   # ADB:6521, WebRTC:8444
+./scripts/run-cuttlefish-gpu-arm64.sh 1   # ADB:6520, WebRTC:8443
+./scripts/run-cuttlefish-gpu-arm64.sh 2   # ADB:6521, WebRTC:8444
 ```
 
 ADB ports run `localhost:6520` ... `localhost:6534` for 15 instances. Container
@@ -519,11 +519,11 @@ ssh -L 8443:localhost:8443 -L 8444:localhost:8444 ubuntu@<AWS_IP>
 
 ## Configuration
 
-Environment variables for `scripts/run-cuttlefish-gpu.sh`:
+Environment variables for `scripts/run-cuttlefish-gpu-arm64.sh`:
 
 ```bash
 X_RES=1920 Y_RES=1080 CPUS=6 MEMORY_MB=6144 \
-  ./scripts/run-cuttlefish-gpu.sh cuttlefish-emu-1 6520 8443
+  ./scripts/run-cuttlefish-gpu-arm64.sh cuttlefish-emu-1 6520 8443
 ```
 
 | Variable | Default | Description |
@@ -560,7 +560,7 @@ directory and pointing `LD_LIBRARY_PATH` only at that directory.
 With the verified `gfxstream_guest_angle + skiavk` mode, only Vulkan symlinks are
 required. ANGLE translates OpenGL to Vulkan inside Android, so host-side EGL/GLES
 libraries are not needed. The implementation lives in
-`scripts/run-cuttlefish-gpu.sh`.
+`scripts/run-cuttlefish-gpu-arm64.sh`.
 
 ```bash
 mkdir -p "$FETCH/hostlibs"
@@ -1103,7 +1103,7 @@ docker exec cuttlefish-emu-1 ls -la /opt/cf/base/*.img
 
 ```bash
 docker stats cuttlefish-emu-1
-MEMORY_MB=6144 ./scripts/run-cuttlefish-gpu.sh ...
+MEMORY_MB=6144 ./scripts/run-cuttlefish-gpu-arm64.sh ...
 docker exec cuttlefish-emu-1 cat /opt/cf/run/cuttlefish/instances/cvd-1/logs/launcher.log | grep -i error
 ```
 
@@ -1150,7 +1150,7 @@ Parallel launch logs (logs go to `/tmp/emu-N.log`):
 
 ```bash
 for i in $(seq 1 14); do
-  ./scripts/run-cuttlefish-gpu.sh $i > /tmp/emu-$i.log 2>&1 &
+  ./scripts/run-cuttlefish-gpu-arm64.sh $i > /tmp/emu-$i.log 2>&1 &
   sleep 2
 done
 wait
@@ -1353,7 +1353,7 @@ test:
     - export VOLUME_NAME="cf-run-${CI_JOB_ID}"
     - docker pull $CI_REGISTRY/cuttlefish-ubuntu24:latest
     - docker tag $CI_REGISTRY/cuttlefish-ubuntu24:latest cuttlefish-ubuntu24:latest
-    - RESET_RUNTIME=true ./scripts/run-cuttlefish-gpu.sh $CONTAINER_NAME 6520 8443
+    - RESET_RUNTIME=true ./scripts/run-cuttlefish-gpu-arm64.sh $CONTAINER_NAME 6520 8443
     - ./wait-for-boot.sh 1 300
     - adb connect localhost:6520
     - adb -s localhost:6520 install -r app.apk
