@@ -1,12 +1,12 @@
 # Cuttlefish Android Emulators on NVIDIA GPU (ARM64, Docker)
 
-![Platform](https://img.shields.io/badge/platform-ARM64-blue)
+![Platform](https://img.shields.io/badge/platform-ARM64%20%7C%20x86__64-blue)
 ![GPU](https://img.shields.io/badge/GPU-NVIDIA%20T4G-76b900)
 ![Docker](https://img.shields.io/badge/Docker-required-2496ed)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Run multiple GPU-accelerated [Cuttlefish](https://source.android.com/docs/devices/cuttlefish)
-Android virtual devices in Docker on ARM64 hosts with NVIDIA GPUs.
+Android virtual devices in Docker on ARM64 and x86_64 hosts with NVIDIA GPUs.
 Hardware-accelerated graphics via `gfxstream` + Vulkan.
 
 ## Features
@@ -24,15 +24,23 @@ Hardware-accelerated graphics via `gfxstream` + Vulkan.
 
 ## Requirements
 
-- ARM64 (`aarch64`) host with an NVIDIA GPU.
+- ARM64 (`aarch64`) or x86_64 host with an NVIDIA GPU.
 - Ubuntu 24.04
 - KVM enabled (`/dev/kvm`)
 - Docker
 - NVIDIA drivers
 
-> x86_64 hosts are not supported yet — this setup targets ARM64 + NVIDIA. See [Roadmap](#roadmap).
+The two architectures use separate images and launchers that live side by side —
+pick the pair that matches your host:
+
+| Host | Image (Dockerfile) | Launcher |
+|------|--------------------|----------|
+| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile`) | `scripts/run-cuttlefish-gpu.sh` |
+| x86_64 (NVIDIA desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-x86.sh` |
 
 ## Quick start
+
+### ARM64 (AWS g5g.metal and similar)
 
 ```bash
 # 1. Clone onto the host
@@ -51,14 +59,51 @@ sudo reboot
 ./scripts/run-cuttlefish-gpu.sh all 14   # 14 instances
 ```
 
+### x86_64 (desktop/laptop with an NVIDIA GPU)
+
+No host provisioning and no sudo needed — the container is fully self-contained
+(Cuttlefish networking runs inside the container's own network namespace). The
+host only needs Docker, `/dev/kvm` and the NVIDIA driver:
+
+```bash
+git clone https://github.com/x-kpanik/cuttledroid.git
+cd cuttledroid
+
+# 1. Build the x86_64 runtime image
+docker build -f Dockerfile.x86 -t cuttlefish-x86:latest .
+
+# 2. Fetch the Android image once (~3 GB into ~/cuttlefish-base-x86)
+mkdir -p ~/cuttlefish-base-x86
+docker run --rm -u 1000:1000 -e HOME=/home/ubuntu \
+  -v ~/cuttlefish-base-x86:/base -w /base cuttlefish-x86:latest \
+  cvd fetch --default_build=14654133/aosp_cf_x86_64_only_phone-userdebug
+
+# 3. Launch
+./scripts/run-cuttlefish-x86.sh 1        # adb 6520, webrtc 8443
+```
+
+### A note on fetch "404" reports
+
+The pinned build `14654133` exists for both targets and downloads fine
+(branch `aosp-android-latest-release`). Two things *do* return 404 and are
+easily mistaken for a missing build:
+
+- `HEAD` requests to `ci.android.com/.../raw/...` — the service only routes
+  `GET`, so `curl -I` always shows 404. Use `curl -L` instead.
+- The `aosp-main` branch — it no longer publishes public Cuttlefish artifacts.
+  Fetch from `aosp-android-latest-release` (pin a build id, or use the branch
+  name to get the latest green build).
+
 ## Repository layout
 
 ```
 .
 ├── Dockerfile              # ARM64 + NVIDIA runtime image (Ubuntu 24.04)
+├── Dockerfile.x86          # x86_64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── scripts/
-│   ├── setup-host.sh           # one-time host provisioning
-│   ├── run-cuttlefish-gpu.sh   # launch one or many GPU emulators
+│   ├── setup-host.sh           # one-time host provisioning (ARM64)
+│   ├── run-cuttlefish-gpu.sh   # launch one or many GPU emulators (ARM64)
+│   ├── run-cuttlefish-x86.sh   # launch GPU emulators on x86_64 hosts
 │   └── install-and-launch.sh   # install an APK and start it on all devices
 ├── src/
 │   └── tcp_nodelay.c       # LD_PRELOAD shim: TCP_NODELAY for low-latency ADB
@@ -171,9 +216,11 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
 
 ## Roadmap
 
-- [ ] **x86_64 host support** — planned. The setup is ARM64-only today; the
-  upstream Cuttlefish orchestrator image is x86_64-oriented and does not support
-  ARM64 `gfxstream` well, so this project uses a custom ARM64 path.
+- [x] **x86_64 host support** — `Dockerfile.x86` + `scripts/run-cuttlefish-x86.sh`.
+  Fully self-contained container (in-container networking, no host services, no
+  sudo). Verified on RTX 5080 / driver 595: guest renders through
+  `ANGLE (NVIDIA, Vulkan)` via gfxstream. Not yet ported to x86: the
+  `TCP_NODELAY` shim and the in-image Appium server.
 
 ## License
 
