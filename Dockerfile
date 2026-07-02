@@ -15,7 +15,9 @@
 #
 # Prerequisites on host:
 #   mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-#   cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+#   cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
+#   (branch form = latest green build; pinned build ids rot once Google CI
+#   garbage-collects them. aosp-main is dead for public fetches — 404.)
 #
 # Run:
 #   ./scripts/run-cuttlefish-gpu.sh 1   # instance 1: adb 6520, webrtc 8443

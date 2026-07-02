@@ -128,7 +128,14 @@ echo "Step 10: Fetch Android image (cvd fetch)..."
 CUTTLEFISH_BASE="/opt/cuttlefish-base"
 mkdir -p "$CUTTLEFISH_BASE"
 chown $USERNAME:$USERNAME "$CUTTLEFISH_BASE"
-sudo -u $USERNAME bash -c "cd $CUTTLEFISH_BASE && cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug"
+# Fetch by BRANCH (latest green build) instead of a pinned build id: pinned ids
+# eventually get garbage-collected from Google CI and start returning 404.
+# To pin a specific build, use e.g. 15660610/aosp_cf_arm64_only_phone-userdebug.
+# NOTE: aosp-main no longer publishes public Cuttlefish artifacts (404) — only
+# aosp-android-latest-release works. HEAD requests to ci.android.com also 404
+# by design; that is not a missing build.
+ANDROID_BUILD="${ANDROID_BUILD:-aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug}"
+sudo -u $USERNAME bash -c "cd $CUTTLEFISH_BASE && cvd fetch --default_build=$ANDROID_BUILD"
 # Make readable by all users
 chmod -R 755 "$CUTTLEFISH_BASE"
 

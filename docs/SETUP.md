@@ -254,7 +254,9 @@ echo -n "Docker: "; docker info &>/dev/null && echo "OK" || echo "MISSING"
 
 ```bash
 mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+# Branch form = latest green build; see "cvd fetch fails with 404" in
+# Troubleshooting before pinning a numeric build ID.
+cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 ```
 
 This downloads the Android images plus Cuttlefish binaries (~3-5 GB) into
@@ -1010,14 +1012,33 @@ newgrp video
 
 ### cvd fetch fails with 404
 
-Use a numeric build ID, not a branch name:
+Three distinct causes, none of which mean "the build is gone":
 
-```bash
-# Fails without auth:
-cvd fetch --default_build=aosp-main/aosp_cf_arm64_only_phone-userdebug
-# Works:
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
-```
+1. **The `aosp-main` branch is dead for public fetches.** It no longer publishes
+   public Cuttlefish artifacts (and its old builds have been garbage-collected).
+   This is a 404, not an auth problem. Use `aosp-android-latest-release`:
+
+   ```bash
+   # Fails (dead branch):
+   cvd fetch --default_build=aosp-main/aosp_cf_arm64_only_phone-userdebug
+   # Works (latest green build on the release branch):
+   cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
+   ```
+
+2. **Pinned build IDs eventually rot.** Google CI garbage-collects old
+   artifacts, so a numeric ID that works today can 404 later. Prefer the
+   branch form above; pin an ID only for reproducible CI caches and expect
+   to refresh it. Resolve the current latest ID with:
+
+   ```bash
+   curl -s -o /dev/null -w '%{redirect_url}\n' \
+     "https://ci.android.com/builds/latest/branches/aosp-android-latest-release/targets/aosp_cf_arm64_only_phone-userdebug/view/BUILD_INFO"
+   # → .../builds/submitted/<BUILD_ID>/...
+   ```
+
+3. **`HEAD` requests to `ci.android.com/.../raw/...` always return 404** — the
+   service only routes `GET`. `curl -I` "verifying" an artifact proves nothing;
+   use `curl -L` (optionally with `-r 0-0`).
 
 ### launch_cvd: "Could not read from dir /home/ubuntu/etc/cvd_config"
 
@@ -1305,15 +1326,17 @@ Use a node-local cache path, not a home directory — `hostPath` to a user home
 does not work in Kubernetes.
 
 ```bash
-mkdir -p /var/cache/cuttlefish/builds/14654133
-cd /var/cache/cuttlefish/builds/14654133
-cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+# Resolve the current <BUILD_ID> first (see "cvd fetch fails with 404" in
+# Troubleshooting); pinned IDs are fine for caches but rot over time.
+mkdir -p /var/cache/cuttlefish/builds/<BUILD_ID>
+cd /var/cache/cuttlefish/builds/<BUILD_ID>
+cvd fetch --default_build=<BUILD_ID>/aosp_cf_arm64_only_phone-userdebug
 ```
 
 ```yaml
 # Kubernetes node-local cache
 hostPath:
-  path: /var/cache/cuttlefish/builds/14654133/aosp_cf_arm64_only_phone-userdebug
+  path: /var/cache/cuttlefish/builds/<BUILD_ID>/aosp_cf_arm64_only_phone-userdebug
 ```
 
 Test pipeline with isolation by job ID. Container and volume names include
@@ -1324,7 +1347,7 @@ read-only and must not be cleaned; only CF_RUN volumes are per-job.
 test:
   stage: test
   variables:
-    CUTTLEFISH_BASE: /var/cache/cuttlefish/builds/14654133
+    CUTTLEFISH_BASE: /var/cache/cuttlefish/builds/<BUILD_ID>
   script:
     - export CONTAINER_NAME="cf-emu-${CI_JOB_ID}"
     - export VOLUME_NAME="cf-run-${CI_JOB_ID}"
@@ -1347,7 +1370,8 @@ volumes accumulate (GB per job), container names conflict, and the disk fills up
 
 | Build ID | Target | Notes |
 |----------|--------|-------|
-| 14654133 | aosp_cf_arm64_only_phone-userdebug | Verified working |
+| 14654133 | aosp_cf_arm64_only_phone-userdebug | Verified working (re-checked 2026-07-02; may be GC'd eventually) |
+| 15660610 | aosp_cf_{arm64,x86_64}_only_phone-userdebug | Latest green on `aosp-android-latest-release` as of 2026-07-02 |
 
 Check available builds:
 

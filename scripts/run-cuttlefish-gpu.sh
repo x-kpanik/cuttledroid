@@ -12,9 +12,9 @@
 #   - VK_ICD_FILENAMES for Vulkan ICD visibility
 #
 # Prerequisites:
-#   1. Fetch ONCE on host:
+#   1. Fetch ONCE on host (branch form = latest green build; pinned ids rot):
 #      mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base
-#      cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug
+#      cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug
 #
 #   2. Build image ONCE:
 #      docker build -t cuttlefish-ubuntu24:latest .
@@ -233,7 +233,7 @@ if [ ! -d "$CUTTLEFISH_BASE" ]; then
     echo ""
     echo "Fetch ONCE with:"
     echo "  mkdir -p ~/cuttlefish-base && cd ~/cuttlefish-base"
-    echo "  cvd fetch --default_build=14654133/aosp_cf_arm64_only_phone-userdebug"
+    echo "  cvd fetch --default_build=aosp-android-latest-release/aosp_cf_arm64_only_phone-userdebug"
     exit 1
 fi
 
