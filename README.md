@@ -46,8 +46,8 @@ whether an NVIDIA GPU is available:
 
 | Host | Image (Dockerfile) | With GPU (gfxstream) | Without GPU (SwiftShader) |
 |------|--------------------|----------------------|---------------------------|
-| ARM64 (AWS g5g / T4G) | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` | `scripts/run-cuttlefish-nogpu-arm64.sh` |
-| x86_64 (desktop/laptop) | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` | `scripts/run-cuttlefish-nogpu-x86.sh` |
+| ARM64 | `cuttlefish-ubuntu24:latest` (`Dockerfile.arm64`) | `scripts/run-cuttlefish-gpu-arm64.sh` | `scripts/run-cuttlefish-nogpu-arm64.sh` |
+| x86_64 | `cuttlefish-x86:latest` (`Dockerfile.x86`) | `scripts/run-cuttlefish-gpu-x86.sh` | `scripts/run-cuttlefish-nogpu-x86.sh` |
 
 All four take the same arguments (`N` for a single instance, `all [count]`
 for many) and use the same ports (adb `6519+N`, webrtc `8442+N`). The no-GPU
