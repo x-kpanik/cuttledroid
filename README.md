@@ -108,6 +108,8 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 │   ├── setup-host.sh                 # one-time host provisioning (ARM64)
 │   ├── run-cuttlefish-gpu-arm64.sh   # launch one or many GPU emulators (ARM64)
 │   ├── run-cuttlefish-gpu-x86.sh     # launch GPU emulators on x86_64 hosts
+│   ├── run-cuttlefish-nogpu-arm64.sh # SwiftShader (no GPU) launcher, ARM64
+│   ├── run-cuttlefish-nogpu-x86.sh   # SwiftShader (no GPU) launcher, x86_64
 │   └── install-and-launch.sh         # install an APK and start it on all devices
 ├── src/
 │   └── tcp_nodelay.c       # LD_PRELOAD shim: TCP_NODELAY for low-latency ADB
@@ -147,17 +149,21 @@ ssh -L 8443:localhost:8443 ubuntu@<HOST_IP>
 
 ### Run without a GPU
 
-Use software (CPU) rendering by setting `GPU_MODE=guest_swiftshader` — it
-replaces `gfxstream_guest_angle` with SwiftShader. It needs no GPU but is much
-slower, so treat it as a fallback:
+Dedicated SwiftShader (CPU rendering) launchers pass nothing GPU-related into
+the container, so they work on hosts without any GPU at all:
 
 ```bash
-GPU_MODE=guest_swiftshader ./scripts/run-cuttlefish-gpu-arm64.sh 1
+./scripts/run-cuttlefish-nogpu-arm64.sh 1   # ARM64
+./scripts/run-cuttlefish-nogpu-x86.sh 1     # x86_64
 ```
 
-The Docker launcher still passes the NVIDIA devices through, so it expects an
-NVIDIA host. On a machine with no NVIDIA GPU, run `launch_cvd` directly instead
-(see [docs/SETUP.md](docs/SETUP.md)).
+Much slower than gfxstream, so the default resolution is reduced (1280x720).
+GPU and no-GPU instances share the same port formula — don't reuse an instance
+number that a GPU instance is already using.
+
+On an NVIDIA host you can also keep using the GPU launchers with
+`GPU_MODE=guest_swiftshader` (x86_64 launcher only; the ARM64 GPU launcher
+always passes the NVIDIA devices through).
 
 ## Ports
 
