@@ -112,6 +112,9 @@ mistaken for a missing build:
 - `HEAD` requests to `ci.android.com/.../raw/...` — the service only routes
   `GET`, so `curl -I` always shows 404. Use `curl -L` instead.
 
+Browse the available builds (build ids, targets, artifacts) in Google's CI at
+[ci.android.com — aosp-android-latest-release grid](https://ci.android.com/builds/branches/aosp-android-latest-release/grid).
+
 See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 
 ## Repository layout
@@ -262,6 +265,7 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
 
 - [Cuttlefish documentation (AOSP)](https://source.android.com/docs/devices/cuttlefish)
 - [android-cuttlefish — source and releases](https://github.com/google/android-cuttlefish)
+- [ci.android.com — Cuttlefish builds (aosp-android-latest-release)](https://ci.android.com/builds/branches/aosp-android-latest-release/grid)
 
 ## Roadmap
 
