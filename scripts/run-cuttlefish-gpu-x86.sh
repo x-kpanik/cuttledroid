@@ -224,7 +224,8 @@ echo "GPU_FLAGS: ${GPU_FLAGS[*]}"
 echo "HOME=$HOME  LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}"
 echo "===================="
 
-exec ./bin/launch_cvd \
+# cvd 1.57 can only monitor logs on a terminal, so start as a daemon and wait on run_cvd instead.
+./bin/launch_cvd \
   "${GPU_FLAGS[@]}" \
   --vhost_user_vsock=true \
   --enable_wifi=false \
@@ -236,7 +237,10 @@ exec ./bin/launch_cvd \
   --cpus="${CPUS:-4}" \
   --memory_mb="${MEMORY_MB:-6144}" \
   --refresh_rate_hz="${REFRESH_RATE_HZ:-30}" \
-  --report_anonymous_usage_stats=n
+  --report_anonymous_usage_stats=n \
+  --daemon=true
+pid=$(pgrep -o -x run_cvd) || { echo "run_cvd did not start"; exit 1; }
+exec tail --pid="$pid" -n +1 -F "$FETCH/cuttlefish/instances/cvd-1/logs/launcher.log"
 GUESTEOF
 
 chmod +x "$WORK_DIR/inner-root.sh" "$WORK_DIR/inner-guest.sh"

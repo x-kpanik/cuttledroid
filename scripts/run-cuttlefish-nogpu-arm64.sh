@@ -326,7 +326,8 @@ WRAPEOF
     echo "============================================"
 
     # CUTTLEFISH_INSTANCE env var sets instance id (more compatible than flags)
-    exec ./bin/launch_cvd \
+    # cvd 1.57 can only monitor logs on a terminal, so start as a daemon and wait on run_cvd instead.
+    ./bin/launch_cvd \
       --gpu_mode=guest_swiftshader \
       --vhost_user_vsock=true \
       --enable_wifi=false \
@@ -339,7 +340,10 @@ WRAPEOF
       --memory_mb=${MEMORY_MB:-8192} \
       --refresh_rate_hz=${REFRESH_RATE_HZ:-30} \
       --extra_kernel_cmdline="kvm-arm.mode=nvhe" \
-      --report_anonymous_usage_stats=n
+      --report_anonymous_usage_stats=n \
+      --daemon=true
+    pid=$(pgrep -o -x run_cvd) || { echo "run_cvd did not start"; exit 1; }
+    exec tail --pid="$pid" -n +1 -F "$FETCH/cuttlefish/instances/cvd-1/logs/launcher.log"
   '
 
 echo ""

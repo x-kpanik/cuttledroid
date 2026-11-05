@@ -151,7 +151,8 @@ echo "=== LAUNCH PARAMS (no GPU / SwiftShader) ==="
 echo "HOME=$HOME  ${X_RES:-1280}x${Y_RES:-720}@${DPI:-240}"
 echo "============================================"
 
-exec ./bin/launch_cvd \
+# cvd 1.57 can only monitor logs on a terminal, so start as a daemon and wait on run_cvd instead.
+./bin/launch_cvd \
   --gpu_mode=guest_swiftshader \
   --vhost_user_vsock=true \
   --enable_wifi=false \
@@ -163,7 +164,10 @@ exec ./bin/launch_cvd \
   --cpus="${CPUS:-4}" \
   --memory_mb="${MEMORY_MB:-4096}" \
   --refresh_rate_hz="${REFRESH_RATE_HZ:-30}" \
-  --report_anonymous_usage_stats=n
+  --report_anonymous_usage_stats=n \
+  --daemon=true
+pid=$(pgrep -o -x run_cvd) || { echo "run_cvd did not start"; exit 1; }
+exec tail --pid="$pid" -n +1 -F "$FETCH/cuttlefish/instances/cvd-1/logs/launcher.log"
 GUESTEOF
 
 chmod +x "$WORK_DIR/inner-root.sh" "$WORK_DIR/inner-guest.sh"

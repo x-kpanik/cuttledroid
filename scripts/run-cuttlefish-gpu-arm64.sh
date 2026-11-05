@@ -447,7 +447,8 @@ WRAPEOF
     # gfxstream (GLES-only) has black screen issues on ARM64+NVIDIA
     # Use gfxstream_guest_angle with Vulkan backend instead
     # CUTTLEFISH_INSTANCE env var sets instance id (more compatible than flags)
-    exec ./bin/launch_cvd \
+    # cvd 1.57 can only monitor logs on a terminal, so start as a daemon and wait on run_cvd instead.
+    ./bin/launch_cvd \
       --gpu_mode=${GPU_MODE:-gfxstream_guest_angle} \
       --gpu_context_types=${GPU_CONTEXT_TYPES:-gfxstream-gles:gfxstream-vulkan} \
       --gpu_vhost_user_mode=${GPU_VHOST_USER_MODE:-on} \
@@ -463,7 +464,10 @@ WRAPEOF
       --memory_mb=${MEMORY_MB:-10240} \
       --refresh_rate_hz=${REFRESH_RATE_HZ:-30} \
       --extra_kernel_cmdline="kvm-arm.mode=nvhe" \
-      --report_anonymous_usage_stats=n
+      --report_anonymous_usage_stats=n \
+      --daemon=true
+    pid=$(pgrep -o -x run_cvd) || { echo "run_cvd did not start"; exit 1; }
+    exec tail --pid="$pid" -n +1 -F "$FETCH/cuttlefish/instances/cvd-1/logs/launcher.log"
   '
 
 echo ""
