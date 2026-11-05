@@ -176,8 +176,9 @@ if [ ! -d "$CUTTLEFISH_BASE" ]; then
     exit 1
 fi
 
-if [ ! -f "$CUTTLEFISH_BASE/bin/assemble_cvd" ]; then
-    echo "ERROR: assemble_cvd not found in $CUTTLEFISH_BASE/bin/"
+# Since cvd 1.57 most of bin/ are symlinks into the debs, so test the fetch marker.
+if [ ! -f "$CUTTLEFISH_BASE/fetcher_config.json" ] || [ ! -d "$CUTTLEFISH_BASE/bin" ]; then
+    echo "ERROR: no fetched base in $CUTTLEFISH_BASE — run cvd fetch first"
     exit 1
 fi
 
@@ -271,10 +272,11 @@ docker run -d \
       fi
     done
 
-    # Link directories
-    for d in etc usr chromeos lib64; do
-      [ -d /opt/cf/base/$d ] && ln -sf /opt/cf/base/$d . || true
+    # Since cvd 1.57 host tool substitution writes into etc, usr and lib64, so copy them.
+    for d in etc usr lib64; do
+      [ -d "/opt/cf/base/$d" ] && { rm -rf "$d"; cp -a "/opt/cf/base/$d" .; } || true
     done
+    [ -d /opt/cf/base/chromeos ] && ln -sf /opt/cf/base/chromeos . || true
 
     # RW copy of bin (required for runtime)
     rm -rf bin && cp -a /opt/cf/base/bin ./bin

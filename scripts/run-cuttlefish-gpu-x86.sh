@@ -108,10 +108,9 @@ echo "Resources:  ${CPUS} vCPU, ${MEMORY_MB} MB, ${X_RES}x${Y_RES}@${DPI}dpi"
 echo "GPU:        mode=$GPU_MODE render=${RENDER_NODE:-none} icd=$VK_ICD_FILE"
 echo ""
 
-# launch_cvd in the fetched dir is a symlink into the cuttlefish debs, broken
-# outside the container — check a real file instead
-if [ ! -f "$CUTTLEFISH_BASE/bin/assemble_cvd" ]; then
-  echo "ERROR: assemble_cvd not found in $CUTTLEFISH_BASE/bin/ — run cvd fetch first (see header)"
+# Since cvd 1.57 most of bin/ are symlinks into the debs, so test the fetch marker.
+if [ ! -f "$CUTTLEFISH_BASE/fetcher_config.json" ] || [ ! -d "$CUTTLEFISH_BASE/bin" ]; then
+  echo "ERROR: no fetched base in $CUTTLEFISH_BASE — run cvd fetch first"
   exit 1
 fi
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
@@ -169,9 +168,11 @@ for f in /opt/cf/base/*.img /opt/cf/base/android-info.txt /opt/cf/base/fetcher_c
     ln -sf "$f" . || true
   fi
 done
-for d in etc usr chromeos lib64; do
-  [ -d "/opt/cf/base/$d" ] && ln -sf "/opt/cf/base/$d" . || true
+# Since cvd 1.57 host tool substitution writes into etc, usr and lib64, so copy them.
+for d in etc usr lib64; do
+  [ -d "/opt/cf/base/$d" ] && { rm -rf "$d"; cp -a "/opt/cf/base/$d" .; } || true
 done
+[ -d /opt/cf/base/chromeos ] && ln -sf /opt/cf/base/chromeos . || true
 
 # RW copy of bin (runtime writes into it)
 rm -rf bin && cp -a /opt/cf/base/bin ./bin

@@ -387,10 +387,11 @@ docker run -d \
       fi
     done
     
-    # Link directories
-    for d in etc usr chromeos lib64; do
-      [ -d /opt/cf/base/$d ] && ln -sf /opt/cf/base/$d . || true
+    # Since cvd 1.57 host tool substitution writes into etc, usr and lib64, so copy them.
+    for d in etc usr lib64; do
+      [ -d "/opt/cf/base/$d" ] && { rm -rf "$d"; cp -a "/opt/cf/base/$d" .; } || true
     done
+    [ -d /opt/cf/base/chromeos ] && ln -sf /opt/cf/base/chromeos . || true
 
     # RW copy of bin (required for runtime)
     rm -rf bin && cp -a /opt/cf/base/bin ./bin

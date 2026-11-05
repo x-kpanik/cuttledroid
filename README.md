@@ -56,6 +56,13 @@ launchers are much slower and default to a reduced 1280x720 resolution — see
 
 ## Quick start
 
+Check the host first. The script downloads nothing and names whatever is
+missing:
+
+```bash
+./scripts/preflight.sh
+```
+
 ### ARM64 (AWS g5g.metal and similar)
 
 ```bash
@@ -125,6 +132,7 @@ See "cvd fetch fails with 404" in [docs/SETUP.md](docs/SETUP.md) for details.
 ├── Dockerfile.x86          # x86_64 + NVIDIA runtime image (Ubuntu 24.04)
 ├── appium/                 # optional Appium overlay image (server + UIAutomator2)
 ├── scripts/
+│   ├── preflight.sh                  # check whether this host can run a device
 │   ├── setup-host.sh                 # one-time host provisioning (ARM64)
 │   ├── run-cuttlefish-gpu-arm64.sh   # launch one or many GPU emulators (ARM64)
 │   ├── run-cuttlefish-gpu-x86.sh     # launch GPU emulators on x86_64 hosts
@@ -219,35 +227,84 @@ Each instance `N` uses a fixed port offset:
 
 ## Configuration
 
-The launcher reads these environment variables (defaults shown):
+The launchers read these environment variables. Defaults differ per
+architecture, the x86_64 launcher is sized for a workstation and the ARM64 one
+for a g5g.metal host:
 
-| Variable          | Default                 | Description                                   |
-|-------------------|-------------------------|-----------------------------------------------|
-| `CUTTLEFISH_BASE` | `/opt/cuttlefish-base`  | Path to the pre-fetched Android base          |
-| `GPU_MODE`        | `gfxstream_guest_angle` | `gfxstream_guest_angle` or `guest_swiftshader` (software) |
-| `X_RES`, `Y_RES`  | `2340`, `1080`          | Screen resolution (landscape)                 |
-| `DPI`             | `400`                   | Screen density                                |
-| `CPUS`            | `6`                     | vCPUs per emulator                            |
-| `MEMORY_MB`       | `10240`                 | RAM per emulator (MB)                         |
+| Variable          | ARM64 default | x86_64 default | Description |
+|-------------------|---------------|----------------|-------------|
+| `CUTTLEFISH_BASE` | `/opt/cuttlefish-base` | `~/cuttlefish-base-x86` | Path to the pre-fetched Android base |
+| `IMAGE_NAME`      | `cuttlefish-ubuntu24:latest` | `cuttlefish-x86:latest` | Runtime image to start |
+| `GPU_MODE`        | `gfxstream_guest_angle` | `gfxstream_guest_angle` | `gfxstream_guest_angle` or `guest_swiftshader` |
+| `X_RES`, `Y_RES`  | `2340`, `1080` | `2340`, `1080` | Screen resolution, landscape |
+| `DPI`             | `400` | `400` | Screen density |
+| `CPUS`            | `6` | `4` | vCPUs per device |
+| `MEMORY_MB`       | `10240` | `6144` | RAM per device in MB |
+| `REFRESH_RATE_HZ` | not used | `30` | Guest refresh rate |
 
 ## Verify the GPU
 
-```bash
-# Inside the container
-docker exec cuttlefish-emu-1 vulkaninfo --summary | head -20
+Inside an ARM64 container:
 
-# On the Android device
+```bash
+docker exec cuttlefish-emu-1 vulkaninfo --summary | head -20
+```
+
+Inside an x86_64 container the GPU environment is exported by the launch script
+and is not part of the container environment, so pass it to `docker exec`:
+
+```bash
+docker exec \
+  -e LD_LIBRARY_PATH=/opt/cf/run/fetch/hostlibs \
+  -e VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json \
+  -e __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
+  cuttlefish-x86-1 vulkaninfo --summary | grep -E 'deviceName|driverInfo'
+```
+
+```
+deviceName = NVIDIA GeForce RTX 5080 Laptop GPU
+driverInfo = 595.71.05
+```
+
+Without those three variables `vulkaninfo` fails with
+`ERROR_INCOMPATIBLE_DRIVER`, which says nothing about the device itself.
+
+On the Android device:
+
+```bash
 adb -s localhost:6520 shell dumpsys SurfaceFlinger | grep GLES
-# GLES: Google (NVIDIA Corporation), Android Emulator OpenGL ES Translator (NVIDIA T4G/PCIe)
+```
+
+```
+GLES: Google Inc. (NVIDIA), ANGLE (NVIDIA, Vulkan 1.3.0 (NVIDIA Virtio-GPU
+GFXStream (NVIDIA GeForce RTX 5080 Laptop GPU)), gfxstream-24.0.128.0),
+OpenGL ES 3.1.0
+```
+
+Software rendering reports SwiftShader in the same place, so the two are easy
+to tell apart:
+
+```
+GLES: Google Inc. (Google), ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device
+(LLVM 16.0.0)), SwiftShader driver-5.0.0), OpenGL ES 3.1.0
 ```
 
 ## Manage instances
 
+Container names differ per launcher, so substitute the right one:
+
+| Launcher | Container name |
+|---|---|
+| `run-cuttlefish-gpu-arm64.sh N` | `cuttlefish-emu-N` |
+| `run-cuttlefish-gpu-x86.sh N` | `cuttlefish-x86-N` |
+| `run-cuttlefish-nogpu-arm64.sh N` | `cuttlefish-nogpu-N` |
+| `run-cuttlefish-nogpu-x86.sh N` | `cuttlefish-nogpu-x86-N` |
+
 ```bash
-docker logs -f cuttlefish-emu-1       # follow logs
-docker exec -it cuttlefish-emu-1 bash # shell into the container
-docker stop cuttlefish-emu-1          # stop
-docker rm -f cuttlefish-emu-1         # remove
+docker logs -f cuttlefish-x86-1       # follow logs
+docker exec -it cuttlefish-x86-1 bash # shell into the container
+docker stop cuttlefish-x86-1          # stop
+docker rm -f cuttlefish-x86-1         # remove
 ```
 
 ## How it works

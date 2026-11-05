@@ -1497,3 +1497,12 @@ After `cvd fetch` and the first `launch_cvd`:
 | `cuttlefish/instances/cvd-N/` | Runtime data for instance N (logs, configs, overlays) |
 | `cuttlefish/instances/cvd-N/logs/launcher.log` | Main log for debugging instance issues |
 | `cuttlefish/instances/cvd-N/logs/logcat` | Android logcat output |
+
+## nvidia-drm modeset on x86_64
+
+`setup-host.sh` turns on `nvidia-drm modeset=1` for ARM64 hosts, where it is
+needed. On x86_64 it is not: a device booted with gfxstream and the guest
+reported the NVIDIA GPU on a laptop where
+`/sys/module/nvidia_drm/parameters/modeset` was `N`. `scripts/preflight.sh`
+therefore reports modeset as a warning, not a failure. Turn it on if the GPU
+launcher falls back to SwiftShader for no other visible reason.
