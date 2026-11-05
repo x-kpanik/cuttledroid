@@ -1506,3 +1506,27 @@ reported the NVIDIA GPU on a laptop where
 `/sys/module/nvidia_drm/parameters/modeset` was `N`. `scripts/preflight.sh`
 therefore reports modeset as a warning, not a failure. Turn it on if the GPU
 launcher falls back to SwiftShader for no other visible reason.
+
+## GPU modes
+
+`GPU_MODE` is passed through to `launch_cvd --gpu_mode`. Cuttlefish 1.55 knows
+nine values. This is what each one does with the x86_64 launcher on an NVIDIA
+host, measured on 2026-11-05 on an RTX 5080 Laptop GPU with build 14654133,
+three minute boot timeout:
+
+| `GPU_MODE` | Boots | Cold boot | Guest renderer | When to use |
+|---|---|---|---|---|
+| `gfxstream_guest_angle` | yes | 22 s | ANGLE on NVIDIA Vulkan through gfxstream, the guest names the real GPU | default, hardware rendering |
+| `guest_swiftshader` | yes | 17 s | ANGLE on SwiftShader inside the guest | no GPU at all, pure CPU rendering |
+| `gfxstream_guest_angle_host_swiftshader` | yes | 27 s | gfxstream to the host, the host renders on SwiftShader | the virtio-gpu path on a host without a GPU |
+| `gfxstream` | no | | | the classic GL translator, did not reach boot |
+| `gfxstream_guest_angle_host_lavapipe` | no | | | needs the Mesa lavapipe ICD, not in the image |
+| `drm_virgl` | no | | | needs virglrenderer, not in the image |
+| `auto` | no | | | did not reach boot with the launcher's flags |
+| `none`, `custom` | not tried | | | no rendering, or a hand written config |
+
+The launcher adds `--gpu_context_types=gfxstream-gles:gfxstream-vulkan`,
+`--gpu_vhost_user_mode=auto` and `--guest_hwui_renderer=skiavk` for every mode
+except `guest_swiftshader`. The four that did not boot were not diagnosed
+further and most likely need their own flag sets and host libraries. The
+renderer string comes from `adb shell dumpsys SurfaceFlinger | grep GLES`.

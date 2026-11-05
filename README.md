@@ -213,6 +213,9 @@ On an NVIDIA host you can also keep using the GPU launchers with
 `GPU_MODE=guest_swiftshader` (x86_64 launcher only; the ARM64 GPU launcher
 always passes the NVIDIA devices through).
 
+Every `GPU_MODE` value Cuttlefish accepts, and which of them actually boot, is
+in [docs/SETUP.md](docs/SETUP.md#gpu-modes).
+
 ## Ports
 
 Each instance `N` uses a fixed port offset:
