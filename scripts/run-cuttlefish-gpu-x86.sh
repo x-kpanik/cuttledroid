@@ -33,6 +33,7 @@
 #   CPUS            - vCPUs per emulator (default: 4)
 #   MEMORY_MB       - RAM in MB (default: 6144)
 #   GPU_MODE        - gfxstream_guest_angle (default) or guest_swiftshader
+#   ADB_NODELAY     - 1 enables the TCP_NODELAY shim on the ADB path, 0 leaves it off
 
 set -e
 
@@ -142,7 +143,14 @@ chmod 666 /dev/dri/* /dev/nvidia* 2>/dev/null || true
 
 # Expose loopback-bound services on the container interface for docker -p:
 #   6521 -> 6520 (adb), 8444 -> 8443 (webrtc operator)
-socat TCP-LISTEN:6521,fork,reuseaddr TCP:127.0.0.1:6520 &
+# ADB_NODELAY=1 marks the device for the TCP_NODELAY shim, read by the socket_vsock_proxy wrapper in the image.
+nd=""
+mkdir -p /run/cuttledroid
+if [ "${ADB_NODELAY:-1}" = 1 ]; then
+  touch /run/cuttledroid/adb_nodelay
+  nd=",nodelay"
+fi
+socat "TCP-LISTEN:6521,fork,reuseaddr$nd" "TCP:127.0.0.1:6520$nd" &
 socat TCP-LISTEN:8444,fork,reuseaddr TCP:127.0.0.1:8443 &
 
 chown -R ubuntu:ubuntu /opt/cf/run
@@ -186,6 +194,7 @@ for l in bin/*; do
     [ -e "/usr/lib/cuttlefish-common/bin/$base" ] && ln -sf "/usr/lib/cuttlefish-common/bin/$base" "$l"
   fi
 done
+
 
 mkdir -p cuttlefish/instances cuttlefish/assembly
 
@@ -259,6 +268,7 @@ docker run -d \
   --device /dev/kvm \
   --device /dev/net/tun \
   "${NVIDIA_DEV_ARGS[@]}" \
+  -e ADB_NODELAY="${ADB_NODELAY:-1}" \
   -e GPU_MODE="$GPU_MODE" \
   -e GPU_VHOST_USER_MODE="$GPU_VHOST_USER_MODE" \
   -e GPU_CONTEXT_TYPES="${GPU_CONTEXT_TYPES:-}" \

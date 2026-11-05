@@ -22,8 +22,9 @@ Android 16 booted with GPU rendering (x86_64 host, RTX 5080; in-guest renderer:
 - **Docker-based** — a single runtime image; the Android base is fetched once and
   shared read-only across all containers.
 - **WebRTC streaming** — view any device in the browser over an SSH tunnel.
-- **Low-latency ADB** — a `TCP_NODELAY` `LD_PRELOAD` shim cuts ADB round-trips
-  from ~50 ms to a few ms.
+- **Low-latency ADB** — a `TCP_NODELAY` `LD_PRELOAD` shim on the ADB path.
+  Measured on x86_64: a host `adb shell` round-trip drops from 26 ms to 7.5 ms.
+  On by default, `ADB_NODELAY=0` turns it off.
 - **Appium-ready (optional)** — the base images ship no Appium; an overlay image
   in [appium/](appium/) adds the server + UIAutomator2 driver when you need it.
 - **Automation-ready** — devices boot with lock screen disabled, animations off,
@@ -244,6 +245,7 @@ for a g5g.metal host:
 | `CPUS`            | `6` | `4` | vCPUs per device |
 | `MEMORY_MB`       | `10240` | `6144` | RAM per device in MB |
 | `REFRESH_RATE_HZ` | not used | `30` | Guest refresh rate |
+| `ADB_NODELAY`     | always on | `1` | `TCP_NODELAY` shim on the ADB path, `0` turns it off |
 
 ## Verify the GPU
 
@@ -332,9 +334,9 @@ See [docs/SETUP.md](docs/SETUP.md) for the full setup guide and troubleshooting.
 - [x] **x86_64 host support** — `Dockerfile.x86` + `scripts/run-cuttlefish-gpu-x86.sh`.
   Fully self-contained container (in-container networking, no host services, no
   sudo). Verified on RTX 5080 / driver 595: guest renders through
-  `ANGLE (NVIDIA, Vulkan)` via gfxstream. Not yet ported to x86: the
-  `TCP_NODELAY` shim (Appium is available for both arches via the
-  [appium/](appium/) overlay).
+  `ANGLE (NVIDIA, Vulkan)` via gfxstream. The `TCP_NODELAY` shim runs on
+  both architectures, behind `ADB_NODELAY` on x86_64 (Appium is available for
+  both arches via the [appium/](appium/) overlay).
 
 ## License
 

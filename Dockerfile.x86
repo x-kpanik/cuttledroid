@@ -1,6 +1,13 @@
 # Cuttlefish runtime image for x86_64 (Ubuntu 24.04) — adapted from
 # Dockerfile.arm64: same Google apt repo (amd64 debs exist), Appium/Node dropped,
 # qemu-system-arm dropped (crosvm comes from the fetched cvd-host_package).
+# Builder stage for the TCP_NODELAY shim, so gcc stays out of the runtime image.
+FROM ubuntu:24.04 AS shim
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY src/tcp_nodelay.c /tmp/tcp_nodelay.c
+RUN gcc -shared -fPIC -o /tcp_nodelay.so /tmp/tcp_nodelay.c -ldl
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,6 +52,14 @@ RUN groupadd -f kvm \
     && groupadd -f render \
     && usermod -aG kvm,cvdnetwork,render ubuntu \
     && echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+COPY --from=shim /tcp_nodelay.so /usr/lib/tcp_nodelay.so
+
+# cvd 1.57 runs the packaged socket_vsock_proxy, so the shim is wired in here, not at launch.
+COPY src/socket_vsock_proxy_wrapper.sh /usr/lib/cuttlefish-common/bin/socket_vsock_proxy.wrapper
+RUN mv /usr/lib/cuttlefish-common/bin/socket_vsock_proxy /usr/lib/cuttlefish-common/bin/socket_vsock_proxy.real \
+    && mv /usr/lib/cuttlefish-common/bin/socket_vsock_proxy.wrapper /usr/lib/cuttlefish-common/bin/socket_vsock_proxy \
+    && chmod 755 /usr/lib/cuttlefish-common/bin/socket_vsock_proxy
 
 ENV HOME=/home/ubuntu
 WORKDIR /home/ubuntu
